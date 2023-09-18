@@ -1,0 +1,326 @@
+\documentclass[12pt, onecolumn]{article}
+
+% 引入相关的包
+\usepackage{amsmath, listings, fontspec, geometry, graphicx, ctex, color, subfigure, amsfonts, amssymb}
+\usepackage{multirow}
+\usepackage[table,xcdraw]{xcolor}
+\usepackage[ruled]{algorithm2e}
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=red,
+	citecolor=red,
+}
+
+% 设定页面的尺寸和比例
+\geometry{left = 1.5cm, right = 1.5cm, top = 1.5cm, bottom = 1.5cm}
+
+% 设定两栏之间的间距
+\setlength\columnsep{1cm}
+
+% 设定字体，为代码的插入作准备
+\newfontfamily\ubuntu{Ubuntu Mono}
+\newfontfamily\consolas{Consolas}
+
+% 头部信息
+\title{\normf{最优估计课程作业}}
+\author{\normf{陈烁龙 2023202140019}}
+\date{\normf{\today}}
+
+% 代码块的风格设定
+\lstset{
+	language=C++,
+	basicstyle=\scriptsize\ubuntu,
+	keywordstyle=\textbf,
+	stringstyle=\itshape,
+	commentstyle=\itshape,
+	numberstyle=\scriptsize\ubuntu,
+	showstringspaces=false,
+	numbers=left,
+	numbersep=8pt,
+	tabsize=2,
+	frame=single,
+	framerule=1pt,
+	columns=fullflexible,
+	breaklines,
+	frame=shadowbox, 
+	backgroundcolor=\color[rgb]{0.97,0.97,0.97}
+}
+
+% 字体族的定义
+% \fangsong \songti \heiti \kaishu
+\newcommand\normf{\fangsong}
+\newcommand\boldf{\heiti}
+\newcommand\keywords[1]{\boldf{关键词：} \normf #1}
+
+\newcommand\liehat[1]{\left[ #1 \right]_\times}
+\newcommand\lievee[1]{\left[ #1 \right]^\vee}
+\newcommand\liehatvee[1]{\left[ #1 \right]^\vee_\times}
+
+\newcommand\mlcomment[1]{\iffalse #1 \fi}
+%\newcommand\mlcomment[1]{ #1 }
+
+\newcounter{problemname}
+\newenvironment{problem}{\stepcounter{problemname}\par\noindent\normf\textbf{\textcolor[rgb]{1,0,0}{题目\arabic{problemname}.} }}{\leavevmode\\\par}
+\newenvironment{solution}{\par\noindent\normf\textbf{解答: }}{\leavevmode\\\par}
+\newenvironment{note}{\par\noindent\normf\textbf{题目\arabic{problemname}的注记: }}{\leavevmode\\\par}
+
+
+\begin{document}
+	
+	% 插入头部信息
+	\maketitle
+	% 换页
+	\thispagestyle{empty}
+	\clearpage
+	\setcounter{page}{1}
+	% 阿拉伯数字形式的页码
+	\pagenumbering{arabic}
+	
+	\section{\normf{第一章:最优估计数学基础}}
+	\begin{problem}
+		什么是严格平稳随机过程?什么是宽平稳随机过程，相对于严格平稳随机
+		过程，它放宽了什么条件?
+	\end{problem}
+	\begin{solution}
+		\begin{enumerate}
+			\item 给定一个随机过程$X(t)$，如果其概率密度函数不随时间变化，即：
+			\begin{equation*}
+			p_{X}(x)=p_{X}(x+\tau)
+			\end{equation*}
+			则称该随机过程是严格平稳的。
+			
+			\item 给定一个随机过程$X(t)$，如果其均值和时间无关，自相关函数与时间起点无关，只与时间间隔有关，即：
+			\begin{equation*}
+			E(X(t))=\mu_{X}
+			\qquad
+			R(X(t_i),X(t_j))=f(t_i-t_j)=f(\Delta t)
+			\end{equation*}
+			则称该随机过程是宽平稳的。
+			
+			\item 宽平稳随机过程不需要保证概率密度函数一直保持不变，只需要其特征值与时间无关，自相关函数只与时间间隔有关即可。
+		\end{enumerate}
+	\end{solution}
+	
+	\begin{problem}
+		若随机过程$X(t)=At,t\in(-\infty,+\infty)$，且A服从$(0,1)$上的均匀分布，求$E(X(t))$和$R_{X}(t_1,t_2)$。
+	\end{problem}
+	\begin{solution}
+		由于A服从$(0,1)$上的均匀分布，所以：
+		\begin{equation*}
+		p_{A}(a)=\begin{cases}
+		1&a\in(0,1)\\
+		0&a\not\in(0,1)
+		\end{cases}
+		\end{equation*}
+		且有：
+		\begin{equation*}
+		E(A)=\int_{0}^{1}a\cdot da=\frac{1}{2}
+		\qquad
+		E(A^2)=\int_{0}^{1}a^2\cdot da=\frac{1}{3}
+		\end{equation*}
+		所以随机过程$X(t)$的均值函数为：
+		\begin{equation*}
+		E(X(t))=tE(A)=\frac{t}{2}
+		\end{equation*}
+		其自相关函数为：
+		\begin{equation*}
+		R(t_i,t_j)=E(X(t_i)X(t_j))=t_it_jE(A^2)=\frac{t_it_j}{3}
+		\end{equation*}
+	\end{solution}
+
+	\begin{problem}
+		什么是方差和均方差，它们之间有什么异同?
+	\end{problem}
+	\begin{solution}
+		\begin{enumerate}
+			\item 方差是描述一个随机变量与其期望的偏离程度，即：
+			\begin{equation*}
+			D(X)=E((X-E(X))^2)
+			\end{equation*}
+			方差小，说明$X$的数值稳定；方差大，说明$X$的数值不稳定。方差只能描述观测值与其期望之间的离散程度，并不能反映出观测值中是否包含系统误差，其反映的是观测值的精度。
+			
+			\item 均方差描述一个随机变量与参考值(通常是真值)的偏离程度，即：
+			\begin{equation*}
+			MSE(X)=E((X-\widetilde{X})^2)
+			\end{equation*}
+			其中$\widetilde{X}$为参考值。均方差能够反映出观测值中是否包含系统误差，是衡量观测值的准度的指标。
+		\end{enumerate}
+	\end{solution}
+	
+	\begin{problem}
+		什么是各态历经性?
+	\end{problem}
+	\begin{solution}
+		当平稳随机过程具有均值历经性和相关函数历经性，则称该平稳随机过程具有各态历经性：
+		\begin{enumerate}
+			\item 均值历经性:若随机过程的平均以概率1趋近全集期望，则称该平稳随机过程具有均值历经性。
+			
+			\item 相关函数历经性:若随机过程的时间平均相关干函数以概率1趋近全集相关函数，则称该平稳随机过程具有相关函数历经性。
+		\end{enumerate}
+	\end{solution}
+	
+	\begin{problem}
+		平稳随机过程的平均功率与均方值和相关函数有什么关系?
+	\end{problem}
+	\begin{solution}
+		由平稳随机过程的平均功率：
+		\begin{equation*}
+		\Psi=\lim_{T\to\infty}E\left( 
+		\frac{1}{2T}\int_{-T}^{T}X^2(t)dt
+		\right) 
+		\end{equation*}
+		可以得到：
+		\begin{equation*}
+		\Psi=E(X^2(t))=R_{X}(0)
+		\end{equation*}
+		所以，平稳随机过程的平均功率与均方值相对，等于相关函数在0处的取值。
+	\end{solution}
+	\section{\normf{第二章:最优估计基础理论}}
+	\subsection{\normf{极大似然估计}}
+	\setcounter{problemname}{0}
+	\begin{problem}
+		设总体X的概率密度函数为
+		\begin{equation*}
+		f(x\vert \theta)=\begin{cases}
+		(\theta+1)x^\theta&x\in(0,1)\\
+		0&x\not\in(0,1)
+		\end{cases}
+		\end{equation*}
+		其中$\theta>1$是未知参数。$X_1,\cdots,X_l$是来自总体$x$的样本，
+		且相互随机独立。用最大似然估计法求$\theta$的估计量。
+	\end{problem}
+	\begin{solution}
+		由于$X_1,\cdots,X_l$是来自总体$x$的样本，且相互随机独立，可以得到似然函数：
+		\begin{equation*}
+		p(x\vert \theta)=\prod_{i=1}^{l}p_{X}(x)=\prod_{i=1}^{l}(\theta+1)x_i^\theta=
+		(\theta+1)^l\cdot\prod_{i=1}^{l}x_i^\theta
+		\end{equation*}
+		对数似然为：
+		\begin{equation*}
+		\ln	p(x\vert \theta)=l\cdot\ln(\theta+1)+\theta\cdot \sum_{i=0}^{l}\ln x_i
+		\end{equation*}
+		对$\theta$求偏导并令其为0：
+		\begin{equation*}
+		\frac{\partial \ln	p(x\vert \theta)}{\partial \theta}=
+		\frac{l}{\theta+1}+\sum_{i=0}^{l}\ln x_i=0
+		\end{equation*}
+		得到：
+		\begin{equation*}
+		\theta=-\frac{l}{\sum_{i=0}^{l}\ln x_i}-1
+		\end{equation*}
+	\end{solution}
+	
+	\subsection{\normf{极大验后估计}}
+	\begin{problem}
+		设$Z$服从二项分布，即$Z\sim B(N,p)$，且$N$已知，$p$为未知参数，$p$的先验分布为0到1的均匀分布，即$p\sim U(0,1)$。现在有$l$个独立样本：$\boldsymbol{z}=\begin{pmatrix}
+		z_1&z_2&\cdots&z_l
+		\end{pmatrix}^\top$，请：
+		\begin{enumerate}
+			\item 给出分布律$P(Z=z_i\vert p)$和$P(Z=\boldsymbol{z}\vert p)$；
+			\item 求联合分布律$P(Z=\boldsymbol{z},p)$；
+			\item 求$p$的极大后验估计。
+		\end{enumerate}
+	\end{problem}
+	\begin{solution}
+		\begin{enumerate}
+			\item 已知Z的分布律为：
+			\begin{equation*}
+			P(Z=z)=C_N^z\cdot p^z\cdot\left( 1-p\right)^{N-z} \quad\mathrm{s.t.}\quad z=0,1,2,\cdots,N
+			\end{equation*}
+			$p$的概率密度函数为：
+			\begin{equation*}
+			P(p)=\begin{cases}
+			1&p\in(0,1)\\
+			0&p\not\in(0,1)
+			\end{cases}
+			\end{equation*}
+			故有：
+			\begin{equation*}
+			P(Z=z_i\vert p)=C_N^{z_i}\cdot p^{z_i}\cdot\left( 1-p\right)^{N-{z_i}}
+			\quad\mathrm{s.t.}\quad p\in(0,1)
+			\end{equation*}
+			由于$\boldsymbol{z}$中的样本独立，所以：
+			\begin{equation*}
+			P(Z=\boldsymbol{z}\vert p)=\prod_{i=1}^{l}P(Z=z_i\vert p)=
+			p^{\sum_{i=1}^{l}z_i}\cdot\left( 1-p\right)^{l\cdot N-\sum_{i=1}^{l}z_i}\cdot\prod_{i=1}^{l}C_N^{z_i}
+			\end{equation*}
+			\item 易得：
+			\begin{equation*}
+			P(Z=\boldsymbol{z},p)=P(Z=\boldsymbol{z}\vert p)\cdot P(p)=
+			p^{\sum_{i=1}^{l}z_i}\cdot\left( 1-p\right)^{l\cdot N-\sum_{i=1}^{l}z_i}\cdot\prod_{i=1}^{l}C_N^{z_i}
+			\quad\mathrm{s.t.}\quad p\in(0,1)
+			\end{equation*}
+			
+			\item 由于：
+			\begin{equation*}
+			P(p\vert Z=\boldsymbol{z})\propto P(Z=\boldsymbol{z}\vert p)\cdot P(p)=P(Z=\boldsymbol{z},p)        
+			\end{equation*}
+			对齐取对数运算，得到：
+			\begin{equation*}
+			\ln P(p\vert Z=\boldsymbol{z})=\sum_{i=1}^{l}z_i\cdot\ln p+
+			\left( l\cdot N-\sum_{i=1}^{l}z_i\right) \cdot\left( 1-p\right)+
+			\sum_{i=1}^{l}\ln C_N^{z_i}
+			\end{equation*}
+			对$p$求导，得到：
+			\begin{equation*}
+			\frac{\partial \ln P(p\vert Z=\boldsymbol{z})}{\partial p}=
+			\left( \frac{1}{p}+1\right) \cdot\sum_{i=1}^{l}z_i-l\cdot N
+			\end{equation*}
+			令其为0，得到：
+			\begin{equation*}
+			p=\frac{\sum_{i=1}^{l}z_i}{l\cdot N-\sum_{i=1}^{l}z_i}
+			\end{equation*}
+		\end{enumerate}
+	\end{solution}
+
+	\subsection{\normf{最小方差估计}}
+	\begin{problem}
+		已知$X$的先验随机信息为$\mu_X=2,\sigma_X=0.1$，现对$X$进行了独立同精度观测，观测值为$\begin{pmatrix}
+		1.9&2.2
+		\end{pmatrix}^\top$，观测中误差为$\delta_\Delta=0.2$。观测误差与$X$随机独立。求$X$的最小方差估计。 
+	\end{problem}
+	\begin{solution}
+		由题意知：
+		\begin{equation*}
+		Z=X+\Delta
+		\end{equation*}
+		观测值和待估参数是线性关系。由于观测误差与$X$随机独立，所以有：
+		\begin{equation*}
+		D_Z=D_X+D_\Delta=0.1^2+0.2^2=0.05
+		\qquad
+		D_{XZ}=1\times D_X=0.01
+		\qquad
+		E(Z)=E(X)=2
+		\end{equation*}
+		由线性最小方差参数估计得到：
+		\begin{equation*}
+		\begin{aligned}
+		X_{MV}&=E(X)+D_{XZ}D_Z^{-1}\left( Z-E(Z)\right) \\
+		&=2+\begin{pmatrix}
+		0.01&0.01
+		\end{pmatrix}\begin{pmatrix}
+		0.05&0\\0&0.05
+		\end{pmatrix}^{-1}\left( 
+		\begin{pmatrix}
+		1.9\\2.2
+		\end{pmatrix}-\begin{pmatrix}
+		2\\2
+		\end{pmatrix}\right) 
+		\\
+		&=2+\begin{pmatrix}
+		0.01&0.01
+		\end{pmatrix}\begin{pmatrix}
+		20&0\\0&20
+		\end{pmatrix}
+		\begin{pmatrix}
+		-0.1\\0.2
+		\end{pmatrix}
+		\\
+		&=2.02
+		\end{aligned}
+		\end{equation*}
+	\end{solution}
+	
+\end{document}
+

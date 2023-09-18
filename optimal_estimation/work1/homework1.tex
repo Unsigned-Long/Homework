@@ -1,0 +1,457 @@
+\documentclass[12pt, onecolumn]{article}
+
+% 引入相关的包
+\usepackage{amsmath, listings, fontspec, geometry, graphicx, ctex, color, subfigure, amsfonts, amssymb}
+\usepackage{multirow}
+\usepackage[table,xcdraw]{xcolor}
+\usepackage[ruled]{algorithm2e}
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=red,
+	citecolor=red,
+}
+
+% 设定页面的尺寸和比例
+\geometry{left = 1.5cm, right = 1.5cm, top = 1.5cm, bottom = 1.5cm}
+
+% 设定两栏之间的间距
+\setlength\columnsep{1cm}
+
+% 设定字体，为代码的插入作准备
+\newfontfamily\ubuntu{Ubuntu Mono}
+\newfontfamily\consolas{Consolas}
+
+% 头部信息
+\title{\normf{最优估计课程作业}}
+\author{\normf{陈烁龙 2023202140019}}
+\date{\normf{\today}}
+
+% 代码块的风格设定
+\lstset{
+	language=C++,
+	basicstyle=\scriptsize\ubuntu,
+	keywordstyle=\textbf,
+	stringstyle=\itshape,
+	commentstyle=\itshape,
+	numberstyle=\scriptsize\ubuntu,
+	showstringspaces=false,
+	numbers=left,
+	numbersep=8pt,
+	tabsize=2,
+	frame=single,
+	framerule=1pt,
+	columns=fullflexible,
+	breaklines,
+	frame=shadowbox, 
+	backgroundcolor=\color[rgb]{0.97,0.97,0.97}
+}
+
+% 字体族的定义
+% \fangsong \songti \heiti \kaishu
+\newcommand\normf{\fangsong}
+\newcommand\boldf{\heiti}
+\newcommand\keywords[1]{\boldf{关键词：} \normf #1}
+
+\newcommand\liehat[1]{\left[ #1 \right]_\times}
+\newcommand\lievee[1]{\left[ #1 \right]^\vee}
+\newcommand\liehatvee[1]{\left[ #1 \right]^\vee_\times}
+
+\newcommand\mlcomment[1]{\iffalse #1 \fi}
+%\newcommand\mlcomment[1]{ #1 }
+
+\newcounter{problemname}
+\newenvironment{problem}{\stepcounter{problemname}\par\noindent\normf\textbf{\textcolor[rgb]{1,0,0}{题目\arabic{problemname}.} }}{\leavevmode\\\par}
+\newenvironment{solution}{\par\noindent\normf\textbf{解答: }}{\leavevmode\\\par}
+\newenvironment{note}{\par\noindent\normf\textbf{题目\arabic{problemname}的注记: }}{\leavevmode\\\par}
+
+
+\begin{document}
+	
+	% 插入头部信息
+	\maketitle
+	% 换页
+	\thispagestyle{empty}
+	\clearpage
+	\setcounter{page}{1}
+	% 阿拉伯数字形式的页码
+	\pagenumbering{arabic}
+	
+	\section{\normf{第一章:最优估计数学基础}}
+	\begin{problem}
+		设随机振幅信号${Y}(t)={X}\cos\omega_0 t$，其中$\omega_0$是常数，${X}$是均值为0，方差为1的正态随机变量，求$t=0,\;\frac{2\pi}{3\omega_0},\;\frac{\pi}{2\omega_0}$时$Y(t)$的概率密度，以及任意时刻$t$，$Y(t)$的一维概率密度。
+	\end{problem}
+	\begin{solution}
+		已知${X}\sim N(0,1)$，故其概率密度函数为：
+		\begin{equation*}
+		p_{X}(x)=\frac{1}{\sqrt{2\pi}\sigma}\cdot \exp{\left( -\frac{(x-\mu)^2}{2\sigma^2}\right) }
+		=\frac{1}{\sqrt{2\pi}}\cdot \exp{\left( -\frac{x^2}{2}\right) }
+		\end{equation*}
+		由于:
+		\begin{equation*}
+		dy=\cos\left( \omega_0 t\right)dx \Rightarrow dx=\frac{dy}{\cos\left( \omega_0 t\right)}
+		\end{equation*}
+		所以：
+		\begin{equation*}
+		\begin{aligned}
+				\int_{-\infty}^{+\infty}\left(
+		h(x\cos\omega_0 t)\cdot p_{X}(x)
+		\right) dx&=
+		\int_{-\infty}^{+\infty}\left(
+		h(x\cos\omega_0 t)\cdot \frac{1}{\sqrt{2\pi}}\cdot \exp{\left( -\frac{x^2}{2}\right) }
+		\right) dx
+		\\
+		&=\int_{-\infty}^{+\infty}\left(
+		h(y)\cdot \frac{1}{\sqrt{2\pi}}\cdot \exp{\left( -\frac{y^2}{2\cos^2\left( \omega_0 t\right)}\right) }
+		 \cdot\frac{1}{\vert\cos\left( \omega_0 t\right)\vert} \right)dy
+		 \\
+		 &=\int_{-\infty}^{+\infty}\left(
+		 h(y)\cdot \frac{1}{\sqrt{2\pi}\cdot\vert\cos\left( \omega_0 t\right)\vert}\cdot \exp{\left( -\frac{y^2}{2\cos^2\left( \omega_0 t\right)}\right) }
+		 \right)dy
+		\end{aligned}
+		\end{equation*}
+		得到：
+		\begin{equation*}
+		p_{Y}(y,t)=\frac{1}{\sqrt{2\pi}\cdot\vert\cos\left( \omega_0 t\right)\vert}\cdot \exp{\left( -\frac{y^2}{2\cos^2\left( \omega_0 t\right)}\right) }
+		\end{equation*}
+		特别的，当$t=\frac{2k+1}{2\omega_0}\cdot\pi$时，有：
+		\begin{equation*}
+		p_{Y}(y,t=\frac{2k+1}{2\omega_0}\cdot\pi)=\delta(y-0)=\begin{cases}
+		+\infty&y=0\\
+		0&y\ne 0
+		\end{cases}
+		\end{equation*}
+		其中$\delta(y-0)$为狄拉克$\delta$函数。显然，当
+		\begin{enumerate}
+			\item $t=0$，有：
+			\begin{equation*}
+			p_{Y}(y,0)=\frac{1}{\sqrt{2\pi}}\cdot \exp{\left( -\frac{y^2}{2}\right) }
+			\Rightarrow{Y}\sim N(0,1)
+			\end{equation*}
+			\item $t=\frac{2\pi}{3\omega_0}$，有：
+			\begin{equation*}
+			p_{Y}(y,\frac{2\pi}{3\omega_0})=\frac{2}{\sqrt{2\pi}}\cdot \exp{\left( -y^2\right) }
+			\end{equation*}
+			\item $t=\frac{\pi}{2\omega_0}$，有：
+			\begin{equation*}
+			p_{Y}(y,\frac{\pi}{2\omega_0})=\delta(y-0)
+			\end{equation*}
+		\end{enumerate}	
+	\end{solution}
+
+	\begin{problem}
+		$X(n,\varphi)=A\cos\left( \omega_0 n+\varphi\right) $，其中$A$和$\omega_0$为常数，$\varphi$为$(-\pi,\pi)$上均匀分布的随机变量，求随机相位信号的均值、方差和自相关函数。
+	\end{problem}
+	\begin{solution}
+		已知$\varphi\sim U(-\pi,\pi)$，有：
+		\begin{equation*}
+		p_{\Phi}(\varphi)=\begin{cases}
+		\frac{1}{2\pi}&\varphi\in(-\pi,\pi)\\
+		0&\varphi\not\in(-\pi,\pi)
+		\end{cases}
+		\end{equation*}
+		所以均值为：
+		\begin{equation*}
+		\begin{aligned}
+		E(X(n,\varphi))&=\int_{-\pi}^{\pi}\left( A\cos\left( \omega_0 n+\varphi\right)\cdot\frac{1}{2\pi}\right) d\varphi
+		\\
+		&=\frac{A}{2\pi}\cdot\int_{-\pi}^{\pi}\left( \cos\left( \omega_0 n+\varphi\right)\right) d\varphi
+		\\
+		&=0
+		\end{aligned}
+		\end{equation*}
+		$n_i$和$n_j$之间的协方差函数为：
+		\begin{equation*}
+		\begin{aligned}
+		D(X(n_i,\varphi),X(n_j,\varphi))&=E(\left( X(n_i,\varphi)-E(X(n,\varphi)\right) \left( X(n_j,\varphi)-E(X(n,\varphi)\right) )
+		\\
+		&=E(X(n_i,\varphi)X(n_j,\varphi))
+		\\
+		&=\int_{-\pi}^{\pi}\left(
+		A\cos\left( \omega_0 n_i+\varphi\right)\cdot
+		A\cos\left( \omega_0 n_j+\varphi\right)\cdot\frac{1}{2\pi}
+		\right) d\varphi
+		\\
+		&=\frac{A^2}{2\pi}\cdot\int_{-\pi}^{\pi}\left(
+		\frac{1}{2}\cdot\cos\left( \omega_0 n_i-\omega_0 n_j\right)+
+		\frac{1}{2}\cdot\cos\left( \omega_0 n_j+\omega_0 n_j+2\varphi\right)
+		\right) d\varphi
+		\\
+		&=\frac{A^2}{2}\cdot\cos\left( \omega_0 n_i-\omega_0 n_j\right)+\int_{-\pi}^{\pi}\left(
+		\frac{1}{2}\cdot\cos\left( \omega_0 n_j+\omega_0 n_j+2\varphi\right)
+		\right) d\varphi
+		\\
+		&=\frac{A^2}{2}\cdot\cos\left( \omega_0 \left( n_i- n_j\right) \right)
+		\end{aligned}
+		\end{equation*}
+		所以，方差为：
+		\begin{equation*}
+		D(X(n,\varphi))=\frac{A^2}{2}
+		\end{equation*}
+		自相关函数为：
+		\begin{equation*}
+		\begin{aligned}
+		R(X(n_i,\varphi),X(n_j,\varphi))&=D(X(n_i,\varphi),X(n_j,\varphi))+E(X(n_i,\varphi))\cdot E(X(n_j,\varphi))\\
+		&=\frac{A^2}{2}\cdot\cos\left( \omega_0 \left( n_i- n_j\right) \right)
+		\end{aligned}
+		\end{equation*}
+	\end{solution}
+
+	\begin{problem}
+		$X(n,\varphi)=A\cos\left( \omega_0 n+\varphi\right) $，其中$A$和$\omega_0$为常数，$\varphi$为$(-\pi,\pi)$上均匀分布的随机变量，问该随机过程是否平稳(广义平稳)。
+	\end{problem}
+	\begin{solution}
+		由题目2知，该随机过程：
+		\begin{equation*}
+		E(X(n,\varphi))=0\qquad
+		R(X(n_i,\varphi),X(n_j,\varphi))=\frac{A^2}{2}\cdot\cos\left( \omega_0 \left( n_i- n_j\right) \right)=f(n_i-n_j)
+		\end{equation*}
+		其均值与时间无关，自相关函数与时间起点无关，只与时间距离有关，所以该随机过程是一个广义平稳过程(宽平稳)。
+	\end{solution}
+
+	\begin{problem}
+		$X(t)=tX$，且$X\sim N(0,1)$，问该随机过程是否平稳。
+	\end{problem}
+	\begin{solution}
+		该随机过程的均值和自相关函数分别为：
+		\begin{equation*}
+		E(X(t))=E(tX)=tE(x)=0
+		\qquad
+		R(X(t_i),X(t_j))=E(X(t_i)X(t_j))=E(t_it_jX^2)=t_it_jE(X^2)=t_it_j
+		\end{equation*}
+		由于均值和时间无关，但是自相关函数和时间起点有关，所以该随机过程不是一个广义平稳过程。
+	\end{solution}
+
+	\begin{problem}
+		设平稳正态随机过程的均值为0，方差为1，自相关函数为$R_{X}(\Delta t)=\frac{\sin(\pi \Delta t)}{\pi \Delta t}$。求$t_1=0,t_2=\frac{1}{2},t_3=1$时的三维概率密度。
+	\end{problem}
+	\begin{solution}
+		由于平稳正态随机过程$X(t)$均值为0，方差为1，求解三个时刻的概率密度函数即为求解对应的均值和方差协方差矩阵。显然：
+		\begin{equation*}
+		\begin{aligned}
+		D(X(t_1),X(t_2))&=E(X(t_1)X(t_2))-E(X(t_1))E(X(t_2))
+		\\
+		&=R(X(t_1),X(t_2))-0
+		\\
+		&=R_{X}(t_2-t_1)=R_{X}(\frac{1}{2})=\frac{2}{\pi}
+		\end{aligned}
+		\end{equation*}
+		同理。可以得到：
+		\begin{equation*}
+		D(X(t_1),X(t_3))=0
+		\qquad
+		D(X(t_2),X(t_3))=\frac{2}{\pi}
+		\end{equation*}
+		所以方差协方差矩阵为：
+		\begin{equation*}
+		\boldsymbol{D}=\begin{pmatrix}
+		D(X(t_1))&D(X(t_1),X(t_2))&D(X(t_1),X(t_3))\\
+		D(X(t_2),X(t_1))&D(X(t_2))&D(X(t_2),X(t_3))\\
+		D(X(t_3),X(t_1))&D(X(t_3),X(t_2))&D(X(t_3))
+		\end{pmatrix}=\begin{pmatrix}
+		1&\frac{2}{\pi}&0\\
+		\frac{2}{\pi}&1&\frac{2}{\pi}\\
+		0&\frac{2}{\pi}&1
+		\end{pmatrix}
+		\end{equation*}
+		均值为：
+		\begin{equation*}
+		\boldsymbol{\mu}=\begin{pmatrix}
+		0&0&0
+		\end{pmatrix}^\top
+		\end{equation*}
+	\end{solution}
+		
+	\newpage
+	\section{\normf{第二章:最优估计基础理论}}
+	\subsection{\normf{极大似然估计}}
+	\setcounter{problemname}{0}
+	\begin{problem}
+		设观测值$\boldsymbol{Z}=\left( Z_1,Z_2,\cdots,Z_n\right)^\top $相互独立且服从$N(\mu,\sigma^2)$，求$\mu$和$\sigma$的最大似然估计。
+	\end{problem}
+	\begin{solution}
+		由于观测值相互独立，定义似然函数为：
+		\begin{equation*}
+		p(\boldsymbol{Z}\vert \mu,\sigma)=\prod_{i=1}^{n}p_{Z_i}(z_i)=
+		\prod_{i=1}^{n}\frac{1}{\sqrt{2\pi}\sigma}\exp\left( -\frac{(z_i-\mu)^2}{\sigma^2}\right) 
+		\end{equation*}
+		通过化简该似然函数，并求对数似然，而后令偏导为0即可得到$\mu$和$\sigma$的最大似然估计。
+	\end{solution}
+
+	\begin{problem}
+		设有观测方程$\boldsymbol{Z}=\boldsymbol{HX}+\boldsymbol{\Delta}$，其中$\boldsymbol{\Delta}$为正态随机向量，$\Delta\sim N(\boldsymbol{0},\boldsymbol{D}_{\Delta})$，$\boldsymbol{X}$为常向量，求$\boldsymbol{X}$的最大似然估计$\boldsymbol{\hat{X}}_{ML}$。
+	\end{problem}
+	\begin{solution}
+		由于$\boldsymbol{Z}$是$\Delta$的线性函数，$\boldsymbol{\Delta}$为正态随机向量，所以$\boldsymbol{Z}$也为正态随机向量，有：
+		\begin{equation*}
+		\boldsymbol{Z}\sim N(\boldsymbol{HX},\boldsymbol{D}_{\Delta})
+		\end{equation*}
+		由此可以得到似然函数：
+		\begin{equation*}
+		p(\boldsymbol{Z}\vert \boldsymbol{X})=p_{\boldsymbol{Z}}(\boldsymbol{z})
+		\end{equation*}
+		令似然函数最小，可以求得$\boldsymbol{X}$的最大似然估计$\boldsymbol{\hat{X}}_{ML}$。
+	\end{solution}
+	
+	\begin{problem}
+		设总体X的概率密度函数为
+		\begin{equation*}
+		f(x\vert \theta)=\begin{cases}
+		(\theta+1)x^\theta&x\in(0,1)\\
+		0&x\not\in(0,1)
+		\end{cases}
+		\end{equation*}
+		其中$\theta>1$是未知参数。$X_1,\cdots,X_l$是来自总体$x$的样本，
+		且相互随机独立。用最大似然估计法求$\theta$的估计量。
+	\end{problem}
+	\begin{solution}
+		由于$X_1,\cdots,X_l$是来自总体$x$的样本，且相互随机独立，可以得到似然函数：
+		\begin{equation*}
+		p(x\vert \theta)=\prod_{i=1}^{l}p_{X}(x)=\prod_{i=1}^{l}(\theta+1)x_i^\theta=
+		(\theta+1)^l\cdot\prod_{i=1}^{l}x_i^\theta
+		\end{equation*}
+		对数似然为：
+		\begin{equation*}
+		\ln	p(x\vert \theta)=l\cdot\ln(\theta+1)+\theta\cdot \sum_{i=0}^{l}\ln x_i
+		\end{equation*}
+		对$\theta$求偏导并令其为0：
+		\begin{equation*}
+		\frac{\partial \ln	p(x\vert \theta)}{\partial \theta}=
+		\frac{l}{\theta+1}+\sum_{i=0}^{l}\ln x_i=0
+		\end{equation*}
+		得到：
+		\begin{equation*}
+		\theta=-\frac{l}{\sum_{i=0}^{l}\ln x_i}-1
+		\end{equation*}
+	\end{solution}
+	
+	\subsection{\normf{极大验后估计}}
+	\begin{problem}
+		设有观测方程$\boldsymbol{Z}=\boldsymbol{HX}+\boldsymbol{\Delta}$，其中$\boldsymbol{\Delta}$为正态随机向量，$\Delta\sim N(\boldsymbol{0},\boldsymbol{D}_{\Delta})$，$\boldsymbol{X}\sim N(\boldsymbol{\mu_X},\boldsymbol{D}_{X})$，求$\boldsymbol{X}$的极大验后估计$\boldsymbol{\hat{X}}_{MAP}$。
+	\end{problem}
+	\begin{solution}
+		给定两个正态随机变量$X\sim N(\mu_X,D_X)$和$Y\sim N(\mu_Y,D_Y)$，则其联合概率密度函数的方差协方差矩阵为：
+		\begin{equation*}
+		\boldsymbol{D}=\begin{pmatrix}
+		D_X&D_{XY}\\D_{YX}&D_Y
+		\end{pmatrix}=\begin{pmatrix}
+		D_X&0\\D_{YX}&\widetilde{D}_{Y}
+		\end{pmatrix}\begin{pmatrix}
+		1&D_X^{-1}D_{XY}\\0&1
+		\end{pmatrix}
+		\end{equation*}
+		得到：
+		\begin{equation*}
+		D_Y=D_{YX}D_X^{-1}D_{XY}+\widetilde{D}_Y\Rightarrow
+		\widetilde{D}_Y=D_Y-D_{YX}D_X^{-1}D_{XY}
+		\end{equation*}
+		结合：
+		\begin{equation*}
+		p_{X,Y}(x,y)=p_{X\vert Y}(x\vert y)p_{Y}(y)=p_{Y\vert X}(y\vert x)p_{X}(x)
+		\end{equation*}
+		可以得到：
+		\begin{equation*}
+		\widetilde{\mu}_{Y}=\mu_Y+D_{YX}D_X^{-1}(x-\mu_X)
+		\end{equation*}
+		事实上$p_{Y\vert X}(y\vert x)$也为高斯函数，其均值和方差为：
+		\begin{equation*}
+		\mu_{Y\vert X}=E(Y\vert X)=\widetilde{\mu}_{Y}
+		\qquad
+		D_{Y\vert X}=D(Y\vert X)=\widetilde{D}_Y
+		\end{equation*}
+		基于此，考虑到$E(Z)=H\mu_X,D(Z)=HD_XH^\top+D_{\Delta},D_{ZX}=D_XH^\top,D_{XZ}=HD_X$，可以得到：
+		\begin{equation*}
+		p_{X\vert Z}(x\vert z)
+		\end{equation*}
+		而后求对数偏导，即可得到$\boldsymbol{X}$的极大验后估计$\boldsymbol{\hat{X}}_{MAP}$。
+		\end{solution}
+		
+		\begin{problem}
+			某随机变量$Z$的概率密度函数为$f_{Z\vert\theta}(z\vert \theta)=\begin{cases}
+			\theta\exp\left( -\theta z\right) &z\ge0\\
+			0&z<0
+			\end{cases}$。现在对随机变量$Z$进行独立观测，观测值为$Z_1,\cdots,Z_n$。求$\theta$的极大似然估计。若参数$\theta$为随机量，概率密度函数为$f_{\theta}(\theta)=\begin{cases}
+			\frac{1}{2}&\theta\in(0,2]\\
+			0&\theta\not\in(0,2]
+			\end{cases}$，求参数$\theta$的极大验后估计。
+		\end{problem}
+		\begin{solution}
+			\begin{enumerate}
+				\item 易得似然函数为：
+				\begin{equation*}
+				p_{Z\vert \theta}(z\vert \theta)=\prod_{i=1}^{n}f_{Z_i\vert\theta}(z_i\vert \theta)=
+				\prod_{i=1}^{n}\theta\exp\left( -\theta z_i\right)
+				\end{equation*}
+				对数似然函数为：
+				\begin{equation*}
+				\ln p_{Z\vert \theta}(z\vert \theta)=l\cdot\ln\theta-\theta\sum_{i=0}^{n}z_i
+				\end{equation*}
+				令其对$\theta$的偏导数为0，得到：
+				\begin{equation*}
+				\theta=\frac{l}{\sum_{i=0}^{n}z_i}
+				\end{equation*}
+				
+				\item 易得极大后验为：
+				\begin{equation*}
+				p_{\theta\vert Z}(\theta\vert z)\propto p_{Z\vert \theta}(z\vert \theta)\cdot p_{\theta}(\theta)=\theta^l\cdot\prod_{i=1}^{n}\exp\left( -\theta z_i\right)\cdot\frac{1}{2}
+				\end{equation*}
+				取对数运算后得到：
+				\begin{equation*}
+				\ln p_{Z\vert \theta}(z\vert \theta)=l\cdot\ln\theta-\theta\sum_{i=0}^{n}z_i-\ln 2
+				\end{equation*}
+				令其对$\theta$的偏导数为0，得到：
+				\begin{equation*}
+				\theta=\frac{l}{\sum_{i=0}^{n}z_i}
+				\end{equation*}
+			\end{enumerate}
+		\end{solution}
+	
+	\begin{problem}
+		最小二乘估计需要已知什么?最优估计准则是什么?
+	\end{problem}
+	\begin{solution}
+		最小二乘需要知道观测值和待估参数之间的函数关系式，以及观测值的特征值。最优估计准则是加权残差平方和最小。
+	\end{solution}
+
+	\begin{problem}
+		极大似然估计需要已知什么?最优估计准则是什么?
+	\end{problem}
+	\begin{solution}
+		最小二乘需要知道观测值的概率密度函数。最优估计准则是使得：
+		\begin{equation*}
+		p_{Z\vert X}(z\vert x)=\max
+		\end{equation*}
+	\end{solution}
+	\begin{problem}
+		极大验后估计需要已知什么?最优估计准则是什么?
+	\end{problem}
+	\begin{solution}
+		最小二乘需要知道观测值和待估参数的概率密度函数。最优估计准则是使得：
+		\begin{equation*}
+		p_{X\vert Z}(x\vert Z)\propto p_{Z\vert X}(z\vert x)\cdot p_{X}(x)=\max
+		\end{equation*}
+	\end{solution}
+	\begin{problem}
+		哪些估计方法将X视为非随机量?
+	\end{problem}
+	\begin{solution}
+		最小二乘和极大似然估计将X视为非随机量，极大验后估计将X视为随机量。
+	\end{solution}
+
+	\subsection{\normf{最小方差估计}}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+\end{document}
+

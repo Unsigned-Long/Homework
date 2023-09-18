@@ -1,0 +1,14 @@
+*.pdf
+*.dtmp
+*.bkp
+*.log
+*.out
+*.lof
+*.bbl
+*.blg
+*.aux
+*.lot
+*.gz
+*.toc
+
+.idea
