@@ -1,0 +1,271 @@
+\documentclass[12pt, onecolumn]{article}
+
+% 引入相关的包
+\usepackage{amsmath, listings, fontspec, geometry, graphicx, ctex, color, subfigure, amsfonts, amssymb}
+\usepackage{multirow}
+\usepackage[table,xcdraw]{xcolor}
+\usepackage[ruled]{algorithm2e}
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=red,
+	citecolor=red,
+}
+
+% 设定页面的尺寸和比例
+\geometry{left = 1.5cm, right = 1.5cm, top = 1.5cm, bottom = 1.5cm}
+
+% 设定两栏之间的间距
+\setlength\columnsep{1cm}
+
+% 设定字体，为代码的插入作准备
+\newfontfamily\ubuntu{Ubuntu Mono}
+\newfontfamily\consolas{Consolas}
+
+% 头部信息
+\title{\normf{最优估计课程作业}}
+\author{\normf{陈烁龙 2023202140019}}
+\date{\normf{\today}}
+
+% 代码块的风格设定
+\lstset{
+	language=C++,
+	basicstyle=\scriptsize\ubuntu,
+	keywordstyle=\textbf,
+	stringstyle=\itshape,
+	commentstyle=\itshape,
+	numberstyle=\scriptsize\ubuntu,
+	showstringspaces=false,
+	numbers=left,
+	numbersep=8pt,
+	tabsize=2,
+	frame=single,
+	framerule=1pt,
+	columns=fullflexible,
+	breaklines,
+	frame=shadowbox, 
+	backgroundcolor=\color[rgb]{0.97,0.97,0.97}
+}
+
+% 字体族的定义
+% \fangsong \songti \heiti \kaishu
+\newcommand\normf{\fangsong}
+\newcommand\boldf{\heiti}
+\newcommand\keywords[1]{\boldf{关键词：} \normf #1}
+
+\newcommand\liehat[1]{\left[ #1 \right]_\times}
+\newcommand\lievee[1]{\left[ #1 \right]^\vee}
+\newcommand\liehatvee[1]{\left[ #1 \right]^\vee_\times}
+
+\newcommand\mlcomment[1]{\iffalse #1 \fi}
+%\newcommand\mlcomment[1]{ #1 }
+
+\newcounter{problemname}
+\newenvironment{problem}{\stepcounter{problemname}\par\noindent\normf\textbf{\textcolor[rgb]{1,0,0}{题目\arabic{problemname}.} }}{\leavevmode\\\par}
+\newenvironment{solution}{\par\noindent\normf\textbf{解答: }}{\leavevmode\\\par}
+\newenvironment{note}{\par\noindent\normf\textbf{题目\arabic{problemname}的注记: }}{\leavevmode\\\par}
+
+
+\begin{document}
+	
+	% 插入头部信息
+	\maketitle
+	% 换页
+	\thispagestyle{empty}
+	\clearpage
+	\setcounter{page}{1}
+	% 阿拉伯数字形式的页码
+	\pagenumbering{arabic}
+	
+	\section{\normf{第二章:最优估计基础理论}}
+	
+	\begin{problem}
+		某随机变量$Z$的概率密度函数为$f_{Z\vert\theta}(z\vert \theta)=\begin{cases}
+		\theta\exp\left( -\theta z\right) &z\ge0\\
+		0&z<0
+		\end{cases}$。现在对随机变量$Z$进行独立观测，观测值为$Z_1,\cdots,Z_n$。($i$) 求$\theta$的极大似然估计。($ii$) 若参数$\theta$为随机量，概率密度函数为$f_{\theta}(\theta)=\begin{cases}
+		\frac{1}{2}&\theta\in(0,2]\\
+		0&\theta\not\in(0,2]
+		\end{cases}$，求参数$\theta$的极大验后估计。
+	\end{problem}
+	\begin{solution}
+		\begin{enumerate}
+			\item 由于各观测值相互独立，易得似然函数为：
+			\begin{equation*}
+			p_{Z\vert \theta}(z\vert \theta)=\prod_{i=1}^{n}f_{Z_i\vert\theta}(z_i\vert \theta)=
+			\prod_{i=1}^{n}\theta\exp\left( -\theta z_i\right)
+			\end{equation*}
+			对应的对数似然函数为：
+			\begin{equation*}
+			\ln p_{Z\vert \theta}(z\vert \theta)=l\cdot\ln\theta-\theta\sum_{i=0}^{n}z_i
+			\end{equation*}
+			令其对$\theta$的偏导数为0，得到：
+			\begin{equation*}
+			\theta=\frac{l}{\sum_{i=0}^{n}z_i}
+			\end{equation*}
+			
+			\item 由于$\theta$为随机量，考虑概率密度函数，其易得极大后验为：
+			\begin{equation*}
+			p_{\theta\vert Z}(\theta\vert z)\propto p_{Z\vert \theta}(z\vert \theta)\cdot p_{\theta}(\theta)=\theta^l\cdot\prod_{i=1}^{n}\exp\left( -\theta z_i\right)\cdot\frac{1}{2}
+			\qquad \theta\in(0,2]
+			\end{equation*}
+			取对数运算后得到：
+			\begin{equation*}
+			\ln p_{Z\vert \theta}(z\vert \theta)=l\cdot\ln\theta-\theta\sum_{i=0}^{n}z_i-\ln 2
+			\end{equation*}
+			令其对$\theta$的偏导数为0，得到：
+			\begin{equation*}
+			\theta=\frac{l}{\sum_{i=0}^{n}z_i}
+			\end{equation*}
+			虽然参数$\theta$为随机量，但是其服从均匀分布，所以最大验后退化为极大似然估计。
+		\end{enumerate}
+	\end{solution}
+	
+	\begin{problem}
+		给出线性最小方差的推导过程。
+	\end{problem}
+	\begin{solution}
+		设估计向量$\boldsymbol{\hat{X}}$和观测向量$\boldsymbol{Z}$满足如下的线性关系：
+		\begin{equation*}
+		\boldsymbol{\hat{X}}=\boldsymbol{B}\boldsymbol{Z}+\boldsymbol{l}
+		\end{equation*}
+		求得$\boldsymbol{B}$和$\boldsymbol{l}$，也就求得了$\boldsymbol{\hat{X}}$的线性最小方差估计。根据最小方差的估计准则，有：
+		\begin{equation*}
+		E\left[ \left( \boldsymbol{X}-\boldsymbol{\hat{X}}\right)^\top\left( \boldsymbol{X}-\boldsymbol{\hat{X}}\right) \right]=\min
+		\end{equation*}
+		由于方差矩阵迹最小的估计和方差矩阵最小的估计等价，故对其进行取迹运算，得到：
+		\begin{equation*}
+		\mathrm{tr}\left( E\left[ \left( \boldsymbol{X}-\boldsymbol{\hat{X}}\right)^\top\left( \boldsymbol{X}-\boldsymbol{\hat{X}}\right) \right]\right) 
+		=\mathrm{tr}\left( E\left[ \left( \boldsymbol{X}-\boldsymbol{B}\boldsymbol{Z}-\boldsymbol{l}\right)^\top \left( \boldsymbol{X}-\boldsymbol{B}\boldsymbol{Z}-\boldsymbol{l}\right)\right]\right) 
+		=\min
+		\end{equation*}
+		分别对$\boldsymbol{B}$和$\boldsymbol{l}$求偏导，并令导数为0：
+		\begin{equation*}
+		\begin{cases}
+		\begin{aligned}
+		\frac{\partial\mathrm{tr}(\cdot)}{\partial \boldsymbol{B}}&=
+		-2\cdot E\left[ \left( \boldsymbol{X}-\boldsymbol{B}\boldsymbol{Z}-\boldsymbol{l}\right)\boldsymbol{Z}^T \right]=0 
+		\\
+		\frac{\partial\mathrm{tr}(\cdot)}{\partial \boldsymbol{l}}&=
+		-E\left[  \boldsymbol{X}-\boldsymbol{B}\boldsymbol{Z}-\boldsymbol{l}\right]=0
+		\end{aligned}
+		\end{cases}
+		\Rightarrow
+		\begin{cases}
+		\begin{aligned}
+		E\left[ \boldsymbol{XZ^\top}\right] -\boldsymbol{B}E\left[\boldsymbol{Z}\boldsymbol{Z}^\top\right] -\boldsymbol{l}E\left[\boldsymbol{Z} \right]  &= 0
+		\\
+		E\left[\boldsymbol{X} \right] -\boldsymbol{B}E\left[ \boldsymbol{Z}\right] -\boldsymbol{l}&=0
+		\end{aligned}
+		\end{cases}
+		\end{equation*}
+		由于$D_{XZ}=E[\boldsymbol{XZ^\top}]-E[\boldsymbol{X}]E[\boldsymbol{Z}]$，$D_{Z}=E[\boldsymbol{ZZ^\top}]-E^2[\boldsymbol{Z}]$，所以有：
+		\begin{equation*}
+		\begin{cases}
+		\begin{aligned}
+		D_{XZ}+E[\boldsymbol{X}]E[\boldsymbol{Z}]-\boldsymbol{B}D_{Z}-\boldsymbol{B}E^2[\boldsymbol{Z}]&=\boldsymbol{l}E\left[\boldsymbol{Z}\right]
+		\\
+		E\left[\boldsymbol{X} \right]E\left[\boldsymbol{Z}\right] -\boldsymbol{B}E^{2}\left[ \boldsymbol{Z}\right]&=\boldsymbol{l}E\left[\boldsymbol{Z}\right]
+		\end{aligned}
+		\end{cases}
+		\end{equation*}
+		得到：
+		\begin{equation*}
+		D_{XZ}-\boldsymbol{B}D_{Z}=0
+		\quad
+		\Rightarrow
+		\quad
+		\boldsymbol{B}=D_{XZ}D_Z^{-1}
+		\end{equation*}
+		进而得到：
+		\begin{equation*}
+		\boldsymbol{l}=E\left[\boldsymbol{X} \right] -D_{XZ}D_Z^{-1}E\left[ \boldsymbol{Z}\right]
+		\end{equation*}
+		所以有：
+		\begin{equation*}
+		\begin{aligned}
+		\boldsymbol{\hat{X}}&=\boldsymbol{B}\boldsymbol{Z}+\boldsymbol{l}
+		\\&=
+		D_{XZ}D_Z^{-1}\boldsymbol{Z}+E\left[\boldsymbol{X} \right] -D_{XZ}D_Z^{-1}E\left[ \boldsymbol{Z}\right]
+		\\&=
+		D_{XZ}D_Z^{-1}\left( \boldsymbol{Z}-E\left[ \boldsymbol{Z}\right]\right) +E\left[\boldsymbol{X} \right]
+		\end{aligned}
+		\end{equation*}
+	\end{solution}
+	\begin{problem}
+		设随机变量$Z$服从正态分布$z\sim N(\theta,1)$，其中参数$\theta$为随机量，其概率密度函数为$f_{\theta}(\theta)=\exp\left(-10(\theta-3)^2 \right) $。现在对随机变量$Z$进行独立观测，观测值$Z_1,\cdots,Z_n$为同精度观测，并且条件独立，设损失函数为均匀损失函数：$L(\theta,\hat{\theta}(Z))=\begin{cases}
+		1&\Vert\Delta\theta\Vert\le\Delta/2\\
+		0&\Vert\Delta\theta\Vert>\Delta/2
+		\end{cases}$，求$\theta$的贝叶斯估计。
+		\begin{enumerate}
+			\item 给出概率密度函数$p(z_1,\cdots,z_n\vert\theta)$和$p(z_1,\cdots,z_n,\theta)$。
+			\item 给出贝叶斯风险的表达式。
+			\item 给出$\theta$ 的贝叶斯估计。
+		\end{enumerate}
+	\end{problem}
+	\begin{solution}
+		\begin{enumerate}
+			\item 由于随机变量$Z$服从正态分布$z\sim N(\theta,1)$，有：
+			\begin{equation*}
+			p_{Z\vert\theta}(z\vert \theta)=\frac{1}{\sqrt{2\pi}}\exp\left( -\frac{(z-\theta)^2}{2}\right) 
+			\end{equation*}
+			由于观测值$Z_1,\cdots,Z_n$为同精度观测，并且条件独立，所以：
+			\begin{equation*}
+			p_{Z\vert\theta}(z_1,\cdots,z_n\vert\theta)=\prod_{i=1}^{n}p_{Z\vert\theta}(z_i\vert \theta)=\prod_{i=1}^{n}\frac{1}{\sqrt{2\pi}}\exp\left( -\frac{(z_i-\theta)^2}{2}\right) =
+			\left( \frac{1}{\sqrt{2\pi}}\right)^n\exp\left(
+			-\frac{1}{2}\sum_{i=1}^{n}(z_i-\theta)^2
+			 \right)  
+			\end{equation*}
+			和：
+			\begin{equation*}
+			p_{Z,\theta|}(z_1,\cdots,z_n,\theta)=p_{Z\vert\theta}(z_1,\cdots,z_n\vert\theta)\cdot f_{\theta}(\theta)=
+			\left( \frac{1}{\sqrt{2\pi}}\right)^n\exp\left(
+			-\frac{1}{2}\sum_{i=1}^{n}(z-\theta)^2-10(\theta-3)^2
+			\right)  
+			\end{equation*}
+			\item 令$\hat{\theta}(Z)$为参数$\theta$ 的贝叶斯估计，$\boldsymbol{z}=\left( Z_1,Z_2,\cdots,Z_n\right)^\top $为观测向量，贝叶斯风险即为损失函数的期望，所以有：
+			\begin{equation*}
+			\begin{aligned}
+			R_B(\theta,\hat{\theta}(\boldsymbol{z}))=E\left[L(\theta,\hat{\theta}(\boldsymbol{z}))
+			\right] &=
+			\int_{-\infty}^{+\infty}\int_{-\infty}^{+\infty}
+			L(\theta,\hat{\theta}(\boldsymbol{z}))\cdot p_{Z,\theta}(\boldsymbol{z},\theta)
+			d\theta d\boldsymbol{z}
+			\\
+			&=\int_{-\infty}^{+\infty}\left\lbrace \int_{-\infty}^{+\infty}
+			L(\theta,\hat{\theta}(\boldsymbol{z}))\cdot p_{\theta\vert Z}(\theta\vert \boldsymbol{z})
+			d\theta \right\rbrace p_{Z}(\boldsymbol{z})d\boldsymbol{z}
+			\\&=\int_{-\infty}^{+\infty}\left\lbrace
+			1- \int_{-\Delta/2}^{+\Delta/2}
+			p_{\theta\vert Z}(\theta\vert \boldsymbol{z})
+			d\theta 
+			\right\rbrace p_{Z}(\boldsymbol{z})d\boldsymbol{z}
+			\end{aligned}
+			\end{equation*}
+			\item 由于损失函数为均匀损失函数，所以此时贝叶斯估计即为最大验后估计，即：
+			\begin{equation*}
+			p_{\theta\vert Z}(\theta\vert \boldsymbol{z})=\max\Leftrightarrow p_{Z\vert \theta}(\boldsymbol{z}\vert\theta )\cdot f_{\theta}(\theta)=\max
+			\end{equation*}
+			也即使得下目标函数最大：
+			\begin{equation*}
+			O(\theta)=\left( \frac{1}{\sqrt{2\pi}}\right)^n\exp\left(
+			-\frac{1}{2}\sum_{i=1}^{n}(z_i-\theta)^2-10(\theta-3)^2
+			\right)  
+			\end{equation*}
+			即：
+			\begin{equation*}
+			\frac{1}{2}\sum_{i=1}^{n}(z_i-\theta)^2+10(\theta-3)^2=\min
+			\end{equation*}
+			对$\theta$求导，得到：
+			\begin{equation*}
+			n\theta-\sum_{i=1}^{n}z_i+20\theta-60=0
+			\end{equation*}
+			得到$\theta$ 的贝叶斯估计为：
+			\begin{equation*}
+			\hat{\theta}_{B}=\hat{\theta}_{MAP}=\frac{\sum_{i=1}^{n}z_i+60}{n+20}
+			\end{equation*}
+		\end{enumerate}
+	\end{solution}
+	
+\end{document}
+
