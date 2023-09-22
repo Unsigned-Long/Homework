@@ -1,0 +1,214 @@
+\documentclass[12pt, onecolumn]{article}
+
+% 引入相关的包
+\usepackage{amsmath, listings, fontspec, geometry, graphicx, ctex, color, subfigure, amsfonts, amssymb}
+\usepackage{multirow}
+\usepackage[table,xcdraw]{xcolor}
+\usepackage[ruled]{algorithm2e}
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=red,
+	citecolor=red,
+}
+
+% 设定页面的尺寸和比例
+\geometry{left = 1.5cm, right = 1.5cm, top = 1.5cm, bottom = 1.5cm}
+
+% 设定两栏之间的间距
+\setlength\columnsep{1cm}
+
+% 设定字体，为代码的插入作准备
+\newfontfamily\ubuntu{Ubuntu Mono}
+\newfontfamily\consolas{Consolas}
+
+% 头部信息
+\title{\normf{基于连续时间的LiDAR/Camera/IMU的时空标定方法}}
+\author{\normf{陈烁龙}}
+\date{\normf{\today}}
+
+% 代码块的风格设定
+\lstset{
+	language=C++,
+	basicstyle=\scriptsize\ubuntu,
+	keywordstyle=\textbf,
+	stringstyle=\itshape,
+	commentstyle=\itshape,
+	numberstyle=\scriptsize\ubuntu,
+	showstringspaces=false,
+	numbers=left,
+	numbersep=8pt,
+	tabsize=2,
+	frame=single,
+	framerule=1pt,
+	columns=fullflexible,
+	breaklines,
+	frame=shadowbox, 
+	backgroundcolor=\color[rgb]{0.97,0.97,0.97}
+}
+
+% 字体族的定义
+% \fangsong \songti \heiti \kaishu
+\newcommand\normf{\fangsong}
+\newcommand\boldf{\heiti}
+\newcommand\keywords[1]{\boldf{关键词：} \normf #1}
+
+\newcommand\liehat[1]{\left[ #1 \right]_\times}
+\newcommand\lievee[1]{\left[ #1 \right]^\vee}
+\newcommand\liehatvee[1]{\left[ #1 \right]^\vee_\times}
+
+\newcommand\mlcomment[1]{\iffalse #1 \fi}
+%\newcommand\mlcomment[1]{ #1 }
+
+\begin{document}
+	
+	% 插入头部信息
+	\maketitle
+	% 换页
+	\thispagestyle{empty}
+	\clearpage
+	
+	% 插入目录、图、表并换页
+	\pagenumbering{roman}
+	\tableofcontents
+	\newpage
+	\listoffigures
+	\newpage
+	\listoftables
+	% 罗马字母形式的页码
+	
+	\clearpage
+	% 从该页开始计数
+	\setcounter{page}{1}
+	% 阿拉伯数字形式的页码
+	\pagenumbering{arabic}
+	
+	\section{\normf{交叉分配}}
+	\normf
+	在每个评审阶段，作品通常都是随机分发的，每份作品需要多位评委独立评审。为了增加不同评审专家所给成绩之间的可比性，不同专家评审的作品集合之间应有一些交集。但有的交集大了，则必然有交集小了，则可比性变弱。请针对3000支参赛队和125位评审专家，每份作品由5位专家评审的情况，建立数学模型确定最优的“交叉分发”方案，并讨论该方案的有关指标(自己定义)和实施细节。
+	
+	给定两个集合$\mathcal{A}$和$\mathcal{B}$，两个集合的交集度量指标为：
+	\begin{equation*}
+	n\left( \mathcal{A}\cap\mathcal{B}\right) =n\left(\mathcal{A} \right)+ n\left(\mathcal{B} \right)-n\left( \mathcal{A}\cup\mathcal{B}\right)
+	\end{equation*}
+	
+	设专家集合为$\mathcal{J}$，且有$n(\mathcal{J})=125$，作品集合为$\mathcal{W}$，且有$n(\mathcal{W})=3000$。设第$i$个专家评审的作品集合为$\mathcal{J}_i(w)$，有$n(\mathcal{J}_i(w))\in[0,1,\cdots,3000)$，第$k$个作品的评审专家集合为$\mathcal{W}_k(j)$，有$n(\mathcal{W}_k(j))=5$。
+	
+	设$\mathcal{G}$为两两专家对的集合，对于$\mathcal{G}$内的每个元素(每对专家组合)，根据两专家之间是否存在共同的评审作品，对其分类到两个集合：
+	\begin{equation*}
+	\mathcal{G}\mapsto\begin{cases}
+	\mathcal{G}_1&n\left(\mathcal{J}_i(w)\cap\mathcal{J}_j(w) \right)=0\\
+	\mathcal{G}_2&n\left(\mathcal{J}_i(w)\cap\mathcal{J}_j(w) \right)> 0\\
+	\end{cases}
+	\end{equation*}
+	其中$\mathcal{G}_1$表示两评审专家不存在相同的评审作品，$\mathcal{G}_2$表示两评审专家存在相同的评审作品。基于此，易得：
+	\begin{equation*}
+	n(\mathcal{G}_1)=\sum_{i=0}^{n(\mathcal{J})-1}\sum_{j=i+1}^{n(\mathcal{J})-1}
+	\delta(n\left(\mathcal{J}_i(w)\cap\mathcal{J}_j(w) \right)-0)
+	\end{equation*}
+	\begin{equation*}
+	n(\mathcal{G}_2)=
+	n(\mathcal{G})-n(\mathcal{G}_1)=
+	C_{n(\mathcal{J})}^{2}-\sum_{i=0}^{n(\mathcal{J})-1}\sum_{j=i+1}^{n(\mathcal{J})-1}
+	\delta(n\left(\mathcal{J}_i(w)\cap\mathcal{J}_j(w) \right)-0)
+	\end{equation*}
+	其中$\delta(x-x_0)$为狄拉克$\delta$函数：
+	\begin{equation*}
+	\delta(x-x_0)=\begin{cases}
+	1&x=x_0\\0&x\ne x_0
+	\end{cases}
+	\end{equation*}
+	
+	
+	\begin{figure}[t]
+		\centering
+		\includegraphics[width=0.8\linewidth]{./imgs/math_modeling.pdf}
+		\caption{\normf 所构造指标的无向图示意图}
+	\end{figure}
+	该无向图中共有$n(\mathcal{J})$个节点，一个节点表示一个专家所评审的作品集合。若两个专家所评审的作品集合的交集非空，则两个对应节点用边连通。边的粗细(权重)与交集中元素个数成正比。
+	
+	为了增加不同评审专家所给成绩之间的可比性，不同专家评审的作品集合之间应有一些交集，但是若存在交集大的，则必然存在交集小的，就会造成可比性变弱。此在无向图中表现为边的粗细不均匀，且边数较少。因此最优的方案是使得该无向图在保证边的数目足够多(交集数目尽可能多)的情况下，同时边的粗细均匀(避免不同交集元素数目之间差异过大)。
+	
+	为此，我们在同时考虑边数目和边粗细的条件下，构建如下的评价指标：
+	
+	\begin{equation*}
+	\rho=\frac{
+		\begin{aligned}
+		n(\mathcal{G}_2)
+		\end{aligned}
+	}{
+		\begin{aligned}
+		\left( 	n(\mathcal{G}_1)+n(\mathcal{G}_2)\right) \cdot(1+\sigma)
+		\end{aligned}
+	}
+	\end{equation*}
+	其中：
+	\begin{equation*}
+	\sigma^2=	\frac{
+		\begin{aligned}
+		\sum_{i=0}^{n(\mathcal{G}_2)-1}
+		\left( 
+		n\left(\mathcal{G}_2^i \right) -\bar{n}{(\mathcal{G}_2) }
+		\right) ^2
+		\end{aligned}
+	}{
+		\begin{aligned}
+		n(\mathcal{G}_2)-1
+		\end{aligned}
+	}
+	\qquad
+	\bar{n}{(\mathcal{G}_2)}=\frac{1}{n(\mathcal{G}_2)}\cdot\sum_{i=0}^{n(\mathcal{G}_2)-1}n(\mathcal{G}_2^i)
+	\end{equation*}
+	解释：
+	\begin{enumerate}
+		\item 边数因子$f_1$：在无向图节点数目一定$n(\mathcal{J})$的情况下，当：
+		\begin{equation*}
+		f_1=\frac{n(\mathcal{G}_2)}{n(\mathcal{G}_1)+n(\mathcal{G}_2)}
+		\end{equation*}
+		越大，边数越多，即交集数目越多。
+		
+		\item 分布因子$f_2$：在无向图边数一定的情况下，当
+		\begin{equation*}
+		f_2=\frac{1}{1+\sigma}
+		\end{equation*}
+		越大，即$\sigma$越小时，表示边的粗细越均匀，也即不同交集元素数目之间差异较小。为了避免$f_1$过小但$\sigma$接近0导致评价指标异常的情况发生，在$\sigma$上补偿了一个单位量。
+	\end{enumerate}
+	
+	在完全没有先验信息，如作品质量、专家评分偏好等未知的情况下，如下的随机分配策略是指标$\rho$下的最优分配策略：
+		\begin{algorithm}[t]
+		\caption{\normf{最优随机策略}}
+		\LinesNumbered 
+		\KwIn{\normf{作品集合$\mathcal{W}$，评审专家集合$\mathcal{J}$，每份作品需被评审的次数$n$。}}
+		\KwOut{\normf{每位专家评审的作品集合，或者每个作品被评审的专家集合。}}
+		\ForEach{$w\in\mathcal{W}$}{
+			\normf{对当前作品随机选取的评审专家集合} $\mathcal{J}_s=\{\}$
+			
+			\For{\normf{$n$}}{
+				\normf{随机选取一个专家$j\in\mathcal{J}$}，满足$j\not\in\mathcal{J}_s$	
+				
+				$j\rightarrow\mathcal{J}_s$
+			}
+			\normf{包含$n$个专家的集合$\mathcal{J}_s$即为当前作品$w$随机分配到的评审专家集合。}
+		}
+	\end{algorithm}
+\newpage
+	为此，我们考虑了三种不同的典型分配策略：
+	\begin{enumerate}
+		\item 所提出的随机分配策略；
+		\item 滑动窗口分配策略：
+			\begin{figure}[h]
+			\centering
+			\includegraphics[width=0.8\linewidth]{./imgs/win_select.pdf}
+			\caption{\normf 滑动窗口分配策略示意图}
+		\end{figure}
+		首先将评审专家进行有序排列成环，每次将作品分配给窗口内相邻的$5$个评审专家。在对下一个作品进行分配时，将窗口向右滑动一步，直至所有作品被分配完毕。
+		\item 块分配策略：将专家分组，每5个专家一个组，共25组。再将作品分组，每120个作品作为一组，共25组。一个组的专家评审一个组的作品。
+		\begin{figure}[h]
+			\centering
+			\includegraphics[width=0.8\linewidth]{./imgs/block_select.pdf}
+			\caption{\normf 滑动窗口分配策略示意图}
+		\end{figure}
+	\end{enumerate}
+	
+\end{document}
+
