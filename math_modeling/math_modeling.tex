@@ -83,7 +83,7 @@
 	% 阿拉伯数字形式的页码
 	\pagenumbering{arabic}
 	
-	\section{\normf{交叉分配}}
+	\section{\normf{交叉分配方案}}
 	\normf
 	在每个评审阶段，作品通常都是随机分发的，每份作品需要多位评委独立评审。为了增加不同评审专家所给成绩之间的可比性，不同专家评审的作品集合之间应有一些交集。但有的交集大了，则必然有交集小了，则可比性变弱。请针对3000支参赛队和125位评审专家，每份作品由5位专家评审的情况，建立数学模型确定最优的“交叉分发”方案，并讨论该方案的有关指标(自己定义)和实施细节。
 	
@@ -196,19 +196,195 @@
 	\begin{enumerate}
 		\item 所提出的随机分配策略；
 		\item 滑动窗口分配策略：
+		\mlcomment{
 			\begin{figure}[h]
 			\centering
 			\includegraphics[width=0.8\linewidth]{./imgs/win_select.pdf}
 			\caption{\normf 滑动窗口分配策略示意图}
-		\end{figure}
+		\end{figure}}
 		首先将评审专家进行有序排列成环，每次将作品分配给窗口内相邻的$5$个评审专家。在对下一个作品进行分配时，将窗口向右滑动一步，直至所有作品被分配完毕。
 		\item 块分配策略：将专家分组，每5个专家一个组，共25组。再将作品分组，每120个作品作为一组，共25组。一个组的专家评审一个组的作品。
-		\begin{figure}[h]
+		\mlcomment{\begin{figure}[h]
 			\centering
 			\includegraphics[width=0.8\linewidth]{./imgs/block_select.pdf}
 			\caption{\normf 滑动窗口分配策略示意图}
-		\end{figure}
+		\end{figure}}
 	\end{enumerate}
+
+	\section{\normf{打分体系}}
+	\subsection{\normf{评分模型}}
+	\begin{enumerate}
+		\item 根据评审专家对所分配到的作品集合的打分情况(符合正态分布的程度)，在现有的标准分计算模型的基础上，考虑一个额外的自适应加权因子。
+	
+		理由：标准分模型考虑评审专家打分的整体偏差(整体过高或过低)，可以在保证被评审作品分数相对高低不变的情况下，去除掉不同专家的打分偏差。但是由于不同作品集合的学术水平分布不一定相同，因此不同集合中作品的可比性不一定相同。每个作品最终在整体中的排位情况由多个专家的给分共同决定，即通过作品在多个不同子集中的排名情况去反映其在全集中的排名情况。通常，在一个比赛中，当参赛队伍数量较大时，我们可以假定参赛作品的水平是满足正态分布的。因此，若某个专家评审的作品集的分布与正态分布相似度高，则该专家的打分具有较高的参考意义。
+		
+		实现：对于第$i$个评审专家的作品集合$\mathcal{J}_i(w)$，基于其原始分数集合，绘制正态QQ图，得到最小二乘相关系数的平方$\rho^2\in[0,1]$，将其作为自适应加权因子。针对第$k$个样本，对分数小于$y_k$的样本概率进行累积，得到其累积概率为：
+		\begin{equation*}
+			F_k=\sum_{s=0}^{k}p_s=\int_{y=-\infty}^{x_k}\frac{1}{\sqrt{2\pi}}\exp\left( -\frac{y^2}{2}\right) 
+		\end{equation*}
+		则其在QQ图上的对应点为$(x_k,y_k)^\top$。利用QQ图鉴可以鉴别样本数据是否近似于正态分布。当QQ图上的点近似地在一条直线附近，说明是正态分布。为了度量样本分布与正态分布的相似性，计算QQ图上散点的相关系数:
+		\begin{equation*}
+		\rho=\frac{\sigma_{xy}}{\sigma_x\cdot\sigma_y}\in[-1,1]
+		\end{equation*}
+		得到最终的自适应加权因子$w=\rho^2$。
+		
+		而后在原始的标准分计算公式的基础上乘以该自适应加权因子，得到新的标准分。
+		
+		\item 关于自适应加权因子的引入方式：
+		作用到第二项的乘法因子上：
+			\begin{equation*}
+			s_2=50+w\times10\times\frac{y-\bar{y}}{\sigma_y}
+			\end{equation*}
+			乘法因子10决定了分数分布的区间长度，即分数最高和最低作品之间的差值。显然，对于不同的评审专家而言，这个区间应该不同：$(i)$ 对于自适应加权因子大的评审专家(即打分满足正态分布)，由于其打分较为合理，能够较大的差异化好坏作品之间的分数差距；$(ii)$对于自适应加权因子小的评审专家(即打分不满足正态分布)，其打分可能存在其他干扰因素，所以打成绩的可信度不高，所以缩小不同作品之间的分数差距(即分数分布区间较小)，能够避免误判的情况发生，因为此时作品的最终成绩受该评审专家的影响较小。
+			
+		在专家对作品的打分过程中，可能出现其中一个专家的打分与另外几个专家的打分有明显差距。此时，该作品的真实得分通常应当与另外几个专家的打分更为接近。为了处理极差较大问题，我们提出了分数的反距离加权平均算法。在第二阶段中，我们首先对每个作品的分数极差进行计算，进而对所有的极差计算平均值与标准差。在计算作品的第二阶段得分时，若作品的极差大于极差平均值与一倍标准差之和，则认为出现了专家对作品打分异常的情况，此时计算标准分的反距离加权平均值，并将其乘以3作为作品第二阶段得分。
+		
+		对于第$k$个作品$w_k$，其标准分集合为$\mathcal{S}^k_{std}(1)=\{s^k_{1,1},s^k_{1,2},s^k_{1,3},s^k_{1,4},s^k_{1,5}\}$，其第一阶段的评分为：
+		\begin{equation*}
+		s^k_1=\mu\left( \mathcal{S}^k_{std}(1)\right) 
+		\end{equation*}
+		
+		设$w_k$为参与了第二阶段评审的第$k$个作品，其标准分集合为$\mathcal{S}^k_{std}(2)=\{s^k_{2,1},s^k_{2,2},s^k_{2,3}\}$，则计算其极差：
+		\begin{equation*}
+		s_{rng}^k(2)=\max\{\mathcal{S}_{std}^k(2)\}-\min\{\mathcal{S}_{std}^k(2)\}
+		\end{equation*}
+		对于极差集合$\mathcal{S}_{rng}(2)=\{\cdots,s^k_{rng}(2),\cdots\}$，其均值为$\mu\left( \mathcal{S}_{rng}(2)\right) $，方差为$\sigma\left(\mathcal{S}_{rng}(2) \right) $，则对于：
+		\begin{equation*}
+		s^k_{rng}(2)>\mu\left( \mathcal{S}_{rng}(2)\right)+\sigma\left(\mathcal{S}_{rng}(2) \right)
+		\end{equation*}
+		的作品，其第二阶段的评分采用如下的反距离加权平均：
+		\begin{equation*}
+		s^k_2=\frac{3}{\begin{aligned}
+			\sum_{i=1}^{3}\left( s^k_{2,i}-\mu\left(\mathcal{S}^k_{std}(2) \right)\right) 
+			\end{aligned}}
+		\cdot\sum_{i=1}^{3}\frac{s^k_{2,i}}{\left( s^k_{2,i}-\mu\left(\mathcal{S}^k_{std}(2) \right) \right) ^2} 
+		\end{equation*}
+		\end{enumerate}
+	
+		所以，第$k$个作品$w_k$的得分为：
+		\begin{equation*}
+		s^k=s^k_1+s^k_2
+		\end{equation*}
+	
+			\begin{algorithm}[h]
+		\caption{\normf{作品评分方法}}
+		\LinesNumbered 
+		\KwIn{\normf{作品集合$\mathcal{W}=\{\cdots,w_k,\cdots\}$，每个作品(比如$w_k$)一阶段评审专家集合$\mathcal{J}_1^k$($n(\mathcal{J}_1^k)=5$)和二阶段的评审专家集合$\mathcal{J}_2^k$($n(\mathcal{J}_2^k)=3$，如果作品没进入二阶段评审，则$n(\mathcal{J}_2^k)=0$)，评审专家集合包含了评审专家的编号和对应的原始评分。}}
+		\KwOut{\normf{每个作品的最终成绩集合$\mathcal{S}=\{\cdots,s^k,\cdots\}$。}}
+		
+		\normf{构建一阶段的专家集合$\mathcal{J}_1$和二阶段的专家集合$\mathcal{J}_2$。每个集合里的元素为一个专家，其持有所审评作品集合。}
+		
+		\normf{对于$\mathcal{J}_1$和$\mathcal{J}_2$中的每个专家，根据其所评作品集合的分数分布，计算正态分布相关系数，将$w=\rho^2$作为该评审专家打分时的自适应加权因子。}
+		
+		\ForEach{$w_k\in\mathcal{W}$}{
+			计算其一阶段的分数$s_1^k$	
+		}
+		分数排名靠前一定百分比的作品进入二阶段评审
+		
+		在二阶段评审中
+		\ForEach{$w_k\in\mathcal{W}$}{
+			计算该作品的评分极差$s_{rng}^k(2)$。
+			
+			$s_{rng}^k(2)\mapsto\mathcal{S}_{rng}(2)$。
+		}
+		求$\mu(\mathcal{S}_{rng}(2))$和$\sigma(\mathcal{S}_{rng}(2))$。
+		\ForEach{$w_k\in\mathcal{W}$}{
+		\If{$s^k_{rng}(2)>\mu(\mathcal{S}_{rng}(2)+\sigma(\mathcal{S}_{rng}(2))$}{对$\mathcal{S}^k_{std}(2)$进行反距离加权平均，而后乘以$3$，得到$s_2^k$。}
+		\If{$s^k_{rng}(2)\le\mu(\mathcal{S}_{rng}(2)+\sigma(\mathcal{S}_{rng}(2))$}{对$\mathcal{S}^k_{std}(2)$中的元素进行累加，得到$s_2^k$。}
+		计算进入二阶段的作品的总分。
+		
+		分数集合$\mathcal{S}$。
+		
+		\ForEach{$w_k\in\mathcal{W}$}{
+		$s^k_1+s^k_2\mapsto s^k$	
+		
+		$s^k\mapsto\mathcal{S}$
+		}
+		对作品进行排序得到最终的排名。
+	}
+	\end{algorithm}
+	\subsection{\normf{模型评价}}
+	设有两个排名序列$\mathcal{O}_1$和$\mathcal{O}_2$，且有$n(\mathcal{O}_1)=n(\mathcal{O}_2)$。这两个序列的元素相同，但是排列顺序不同，即不同的排名结果。定义两个序列之间的相似性为：
+	\begin{equation*}
+	s=\frac{1}{
+		\begin{aligned}
+		1+\sum_{i=0}^{n(\mathcal{O}_1)-1}\vert\mathcal{O}_1^i-\mathcal{O}_2^i\vert
+		\end{aligned}
+	}
+	\end{equation*}
+	当两个序列完全一致时，$s=1$。
+	
+	相关系数：
+	\begin{equation*}
+	\rho\left(\mathcal{O}_1,\mathcal{O}_2 \right)=\frac{cov\left(\mathcal{O}_1,\mathcal{O}_2 \right) }{
+	\sigma\left(\mathcal{O}_1\right) \cdot\sigma\left(\mathcal{O}_2 \right) 	
+	}
+	\end{equation*}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 \end{document}
 
