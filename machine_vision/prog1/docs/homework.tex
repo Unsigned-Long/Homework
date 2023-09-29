@@ -11,7 +11,8 @@
 	linkcolor=red,
 	citecolor=red,
 }
-
+\usepackage{booktabs}
+\usepackage{multirow}
 % 设定页面的尺寸和比例
 \geometry{left = 1.5cm, right = 1.5cm, top = 1.5cm, bottom = 1.5cm}
 
@@ -24,7 +25,7 @@
 
 % 头部信息
 \title{\normf{机器视觉编程1：直线和角点提取} }
-\author{\normf{陈烁龙 2023202140019}}
+\author{\normf 姓名：陈烁龙\;\;\;学号：2023202140019\;\;\;学院：测绘学院}
 \date{\normf{\today}}
 
 % 代码块的风格设定
@@ -311,41 +312,57 @@
 	\section{\normf{直线提取}}
 	\normf
 	
-	\subsection{\normf LSD算法1}
+	\subsection{\normf LSD算法}
+	LSD(Line Segment Detector)是一种线特征提取算法，用于检测图像中的直线。它能够快速而准确地检测出直线，适用于各种类型的图像，例如自然景观、工业场景、街景等1。LSD算法具有以下特点：
+	\begin{enumerate}
+	\item 线性时间：LSD算法能够在线性时间内检测出图像中的线段。
+	\item 亚像素精度：LSD算法能够提供亚像素级别的精确结果。
+	\item 参数自适应：LSD算法能够在任何数字图像上工作而不需要调整参数。
+	\item 控制错误检测数量：LSD算法可以控制自身的错误检测数量，平均而言，每幅图像允许有一个误报。
+	\end{enumerate}
 	
-	图\ref{fig:LSD1直线提取结果}为LSD1直线提取结果。
+	然而，LSD算法也存在一些缺点，包括：
+	\begin{enumerate}
+	\item 对噪声敏感：LSD算法对图像中的噪声比较敏感，可能会导致误检测。
+	\item 对线段长度敏感：LSD算法在检测长线段和短线段时可能会出现不同程度的偏差。
+	\item 对线段方向敏感：LSD算法在检测水平线段和垂直线段时可能会比其他方向的线段更容易出现误差。
+	\end{enumerate}
+	
+	图\ref{fig:LSD直线提取结果}为LSD直线提取结果。除了LSD之外，还有其他一些新的直线提取算法，例如TP-LSD、ULSD、LETR等。这些算法在速度和准确性方面都有所改进，并且适用于不同类型的图像。
+	
+		
 	\begin{figure}[t]
 		\centering
-		\subfigure[\normf{图像1的LSD1直线提取结果}]{
-			\centering
-			\includegraphics[width=0.45\linewidth]{../data/lsd_sample/img1/marked_image.jpg}
-		}
-		\subfigure[\normf{图像2的LSD1直线提取结果}]{
-			\centering
-				\includegraphics[width=0.45\linewidth]{../data/lsd_sample/img2/marked_image.jpg}
-			}
-		\caption{\normf LSD1直线提取结果}
-		\label{fig:LSD1直线提取结果}
-		\end{figure}
-	
-	\subsection{\normf LSD算法2}
-	
-		图\ref{fig:LSD2直线提取结果}为LSD2直线提取结果。
-	\begin{figure}[t]
-		\centering
-		\subfigure[\normf{图像1的LSD2直线提取结果}]{
+		\subfigure[\normf{图像1的LSD直线提取结果}]{
 			\centering
 			\includegraphics[width=0.45\linewidth]{../data/lsd_complex/img1/marked_image.jpg}
 		}
-		\subfigure[\normf{图像2的LSD2直线提取结果}]{
+		\subfigure[\normf{图像2的LSD直线提取结果}]{
 			\centering
 				\includegraphics[width=0.45\linewidth]{../data/lsd_complex/img2/marked_image.jpg}
 			}
-		\caption{\normf LSD2直线提取结果}
-		\label{fig:LSD2直线提取结果}
+		\caption{\normf LSD直线提取结果}
+		\label{fig:LSD直线提取结果}
 		\end{figure}
 	
-	\section{\normf{附录：代码}}
+	\section{\normf{附录：运行环境及主要代码片段}}
+	本次的直线和点提取编程是基于C++版本的OpenCV实现的。需要注意的是，在最新版本的OpenCV中，SIFT算法已经直接包含，而SURF则需要用到OpenCV的附属贡献库(OpenCV Contrib)。表\ref{tab:运行环境}展示了本次编程的运行环境。
+	% Please add the following required packages to your document preamble:
+	% \usepackage{multirow}
+	\begin{table}[h]
+	\centering
+	\caption{\normf 运行环境}
+	\label{tab:运行环境}
+	\begin{tabular}{ccc|cl}
+	\midrule[1pt]
+	\multicolumn{1}{c|}{\multirow{2}{*}{Config.}} & OS name & Ubuntu 20.04.6 LTS & Processor          & 12th Gen Intel® Core™ i9-12900H × 20         \\ \cmidrule{2-5} 
+	\multicolumn{1}{c|}{}                         & OS Type & 64-bit             & Graphics           & Mesa Intel® Graphics (ADL GT2)               \\ \midrule[1pt]\midrule[1pt]
+	\multicolumn{3}{c|}{Library}                                                 & \multicolumn{2}{c}{Link}                                          \\ \midrule
+	\multicolumn{3}{c|}{OpenCV}                                                  & \multicolumn{2}{l}{https://github.com/opencv/opencv.git}          \\
+	\multicolumn{3}{c|}{OpenCV Contrib}                                          & \multicolumn{2}{l}{https://github.com/opencv/opencv\_contrib.git} \\
+	\multicolumn{3}{c|}{Cereal}                                                  & \multicolumn{2}{l}{https://github.com/USCiLab/cereal.git}         \\ \midrule[1pt]
+	\end{tabular}
+	\end{table}
 	\begin{lstlisting}[caption={\normf 点和直线的数据结构}]
 	    struct Entity {
 	    public:
@@ -510,23 +527,8 @@
 	    }
 	    mats.insert({"marked_image", markedImg});
 	\end{lstlisting}
-	\begin{lstlisting}[caption={\normf LSD1直线提取代码}]
-	    auto lsd = cv::createLineSegmentDetector();
-	    std::vector<cv::Vec4f> cvLines;
-	    lsd->detect(img, cvLines);
-	
-	    // mark corners to source image
-	    for (const auto &elem: cvLines) {
-	        lines.push_back(Line::Create({elem[0], elem[1]}, {elem[2], elem[3]}));
-	    }
-	    cv::Mat markedImg;
-	    cv::cvtColor(img, markedImg, cv::COLOR_GRAY2BGR);
-	    for (const auto &elem: lines) {
-	        elem->Draw(markedImg);
-	    }
-	    mats.insert({"marked_image", markedImg});
-	\end{lstlisting}
-	\begin{lstlisting}[caption={\normf LSD2直线提取代码}]
+
+	\begin{lstlisting}[caption={\normf LSD直线提取代码}]
 	    auto lsd = cv::line_descriptor::LSDDetector::createLSDDetector();
 	    std::vector<cv::line_descriptor::KeyLine> cvLines;
 	    lsd->detect(img, cvLines, 2, 1);
