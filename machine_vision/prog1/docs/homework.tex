@@ -1,0 +1,547 @@
+\documentclass[12pt, onecolumn]{article}
+
+% 引入相关的包
+\usepackage{amsmath, listings, fontspec, geometry, graphicx, ctex, color, subfigure, amsfonts, amssymb}
+\usepackage{multirow}
+\usepackage[table,xcdraw]{xcolor}
+\usepackage[ruled]{algorithm2e}
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=red,
+	citecolor=red,
+}
+
+% 设定页面的尺寸和比例
+\geometry{left = 1.5cm, right = 1.5cm, top = 1.5cm, bottom = 1.5cm}
+
+% 设定两栏之间的间距
+\setlength\columnsep{1cm}
+
+% 设定字体，为代码的插入作准备
+\newfontfamily\ubuntu{Ubuntu Mono}
+\newfontfamily\consolas{Consolas}
+
+% 头部信息
+\title{\normf{机器视觉编程1：直线和角点提取} }
+\author{\normf{陈烁龙 2023202140019}}
+\date{\normf{\today}}
+
+% 代码块的风格设定
+\lstset{
+	language=C++,
+	basicstyle=\small\ubuntu,
+	keywordstyle=\textbf,
+	stringstyle=\itshape,
+	commentstyle=\itshape,
+	numberstyle=\scriptsize\ubuntu,
+	showstringspaces=false,
+	numbers=left,
+	numbersep=8pt,
+	tabsize=2,
+	frame=single,
+	framerule=1pt,
+	columns=fullflexible,
+	breaklines,
+	frame=shadowbox, 
+	backgroundcolor=\color[rgb]{0.97,0.97,0.97}
+}
+
+% 字体族的定义
+% \fangsong \songti \heiti \kaishu
+\newcommand\normf{\fangsong}
+\newcommand\boldf{\heiti}
+\newcommand\keywords[1]{\boldf{关键词：} \normf #1}
+
+\newcommand\liehat[1]{\left[ #1 \right]_\times}
+\newcommand\lievee[1]{\left[ #1 \right]^\vee}
+\newcommand\liehatvee[1]{\left[ #1 \right]^\vee_\times}
+
+\newcommand\mlcomment[1]{\iffalse #1 \fi}
+%\newcommand\mlcomment[1]{ #1 }
+
+\newcounter{problemname}
+\newenvironment{problem}{\stepcounter{problemname}\par\noindent\normf\textbf{\textcolor[rgb]{1,0,0}{题目\arabic{problemname}.} }}{\leavevmode\\\par}
+\newenvironment{solution}{\par\noindent\normf\textbf{解答: }}{\leavevmode\\\par}
+\newenvironment{note}{\par\noindent\normf\textbf{题目\arabic{problemname}的注记: }}{\leavevmode\\\par}
+
+
+\begin{document}
+	
+	% 插入头部信息
+		\maketitle
+		% 换页
+		\thispagestyle{empty}
+		\clearpage
+		
+		% 插入目录、图、表并换页
+		\pagenumbering{roman}
+		\tableofcontents
+		\newpage
+		\listoffigures
+%		\newpage
+%		\listoftables
+		% 罗马字母形式的页码
+		
+		\clearpage
+		% 从该页开始计数
+		\setcounter{page}{1}
+		% 阿拉伯数字形式的页码
+		\pagenumbering{arabic}
+	
+	\section{\normf{角点提取}}
+	\normf
+	\subsection{\normf{Harris角点}}
+	Harris角点检测算法诞生于1988年，是在Moravec算法(另一种角点检测算法)的基础上提出的，其克服了图像中噪声对角点检测的影响。定义某个角点的能量为：
+	\begin{equation}
+	\mathcal{E}(u,v)=\sum_{(x,y)\in\mathcal{W}}w(x,y)\left[ 
+	I(x+u,y+v)-I(x,y)
+	\right] ^2
+	\end{equation}
+	其中$(x,y)$为窗口$\mathcal{W}$内的点位，$I(\cdot)$为某个像素位置处的强度，$w(x,y)$是二维的高斯窗口函数。将上式展开得到：
+	\begin{equation}
+	\mathcal{E}(u,v)=\sum_{(x,y)\in\mathcal{W}}w(x,y)\left[ 
+		u\cdot I_x+v\cdot I_y
+		\right] ^2=\begin{pmatrix}
+		u&v
+		\end{pmatrix}\boldsymbol{M}\begin{pmatrix}
+		u\\v
+		\end{pmatrix}
+	\end{equation}
+	其中：
+	\begin{equation}
+	\boldsymbol{M}=\sum_{(x,y)\in\mathcal{W}}w(x,y)\begin{pmatrix}
+	I_x^2 &I_xI_y\\
+	I_xI_y&I_y^2
+	\end{pmatrix}
+	\end{equation}
+	也即为Harris矩阵。设$\lambda_1$和$\lambda_2$为$\boldsymbol{M}$的两个特征值，则有：
+	\begin{enumerate}
+	\item $\lambda_1$和$\lambda_2$均小：光滑区域；
+	\item $\lambda_1\gg \lambda_2$或者$\lambda_2\gg \lambda_1$：边缘区域；
+	\item $\lambda_1$和$\lambda_2$均大：角点区域。
+	\end{enumerate}
+	基于此，若要识别角点，构建如下的响应函数：
+	\begin{equation}
+	R=\det(\boldsymbol{M})-k\times (\mathrm{trace}(\boldsymbol{M}))^2=\lambda_1\lambda_2-\alpha\times(\lambda_1+\lambda_2)^2
+	\end{equation}
+	当$R$大于某个阈值时，认为窗口中心为一个角点。
+	
+	图\ref{fig:Harris角点提取结果}为实验的结果，一共选取了两个场景的照片进行了测试(室内环境和室外环境)。其中图\ref{fig:图像1的Harris响应函数}和图\ref{fig:图像2的Harris响应函数}为计算Harris响应函数得到的图，其中黑色表示负值区域，也即边缘区域；白色表示正值区域，也即角点区域；红色区域表示平坦区域，也响应值小的区域。
+	图\ref{fig:图像1的角点提取结果}和图\ref{fig:图像2的角点提取结果}为将Harris算法提取得到的角点绘制到原始灰度图像上的结果。
+	在测试中，两个图像都使用了相同的参数：窗口大小，核函数大小，角点阈值为。
+	可以发现，似然Harris能够提取到一定的角点，但是：
+	\begin{enumerate}
+	\item 阈值决定角点的数量。阈值过低会导致大量角点和非角点被提取出来；阈值过小会导致提取的角点数目过少，忽视了其他的角点；
+	\item 虽然使用了核函数，但是算法任然对图像中的噪声比较敏感，可能会将噪声误判为角点；
+	
+	\item 对尺度变化不敏感：Harris角点检测算法在处理尺度变化较大的图像时效果较差;
+	
+	\item 对旋转变化不敏感：算法对图像的旋转变化不敏感，可能会导致角点检测结果不准确;
+	\end{enumerate}
+	
+	为了解决Harris角点检测算法的一些缺点，研究者们提出了一些改进的方法，如尺度不变特征变换（Scale-Invariant Feature Transform，SIFT）和加速稳健特征（Speeded Up Robust Features，SURF）等。这些改进算法在角点检测的准确性和鲁棒性上有所提升。具体的算法测试案例见下文。
+	
+	\begin{figure}[t]
+	\centering
+	\subfigure[\normf{图像1的Harris响应函数}]{
+				\centering
+				\includegraphics[width=0.45\linewidth]{../data/harris/img1/response.jpg}
+				\label{fig:图像1的Harris响应函数}
+			}
+	\subfigure[\normf{图像2的Harris响应函数}]{
+				\centering
+					\includegraphics[width=0.45\linewidth]{../data/harris/img2/response.jpg}
+					
+					\label{fig:图像2的Harris响应函数}
+				}
+	\subfigure[\normf{图像1的角点提取结果}]{
+		\centering
+		\includegraphics[width=0.45\linewidth]{../data/harris/img1/marked_image.jpg}
+		\label{fig:图像1的角点提取结果}
+	}
+	\subfigure[\normf{图像2的角点提取结果}]{
+		\centering
+			\includegraphics[width=0.45\linewidth]{../data/harris/img2/marked_image.jpg}
+			
+			\label{fig:图像2的角点提取结果}
+		}
+	\caption{\normf Harris角点提取结果}
+	\label{fig:Harris角点提取结果}
+	\end{figure}
+	
+	
+	
+	\subsection{\normf{FAST角点}}
+	FAST角点检测是一种快速的特征点检测方法。它的基本原理是使用一个周长为16个像素点(半径为3的圆)来判定其圆心像素p是否为角点1。FAST角点定义如下：若某像素与其周围邻域内足够多的像素点相差较大，则该像素可能是角点。
+	
+	FAST算法的流程如下：
+	\begin{enumerate}
+	\item 选择一个像素点作为中心点。
+	\item 将中心点的亮度值设为$I_p$。
+	\item 以该像素点为中心的一个半径等于3像素的离散化圆上的16个像素，分别记为$p_i,i\in[0,1,\cdots,16]$，亮度值分别记为$I_{p_1}\sim I_{p_{16}}$。
+	\item 选定一个阈值$t$。
+	\item 计算$p_1$、$p_9$、$p_5$和$p_{13}$与中心$p$的像素差，若它们的绝对值有至少3个超过阈值$t$，则认为该像素是候选角点。
+	\item 在候选角点的情况下，计算$p_1$到$p_{16}$这16个点与中心$p$的像素差，若它们有至少连续9个超过阈值t，则认为该像素是角点。
+	\end{enumerate}
+	FAST角点检测方法具有计算速度快、精度高等优点。图\ref{fig:FAST角点提取结果}为FAST角点提取结果。
+	\begin{figure}[t]
+		\centering
+		\subfigure[\normf{图像1的FAST角点提取结果}]{
+			\centering
+			\includegraphics[width=0.45\linewidth]{../data/fast/img1/marked_image.jpg}
+			\label{fig:图像1的FAST角点提取结果}
+		}
+		\subfigure[\normf{图像2的FAST角点提取结果}]{
+			\centering
+				\includegraphics[width=0.45\linewidth]{../data/fast/img2/marked_image.jpg}
+				
+				\label{fig:图像2的FAST角点提取结果}
+			}
+		\caption{\normf FAST角点提取结果}
+		\label{fig:FAST角点提取结果}
+		\end{figure}
+		
+	FAST角点检测虽然速度较快，但是其存在如下的缺点：
+	\begin{enumerate}
+	\item 检测到的很多特征点是连在一起的；
+	\item 检测出来的角点不是最优的，这是因为它的效果是依靠角点外围的排列和分布；
+	\end{enumerate}
+	
+	\subsection{\normf{ORB角点}}
+	ORB（Oriented FAST and Rotated BRIEF）是一种特征点检测和提取算法，由Ethan Rublee等人于2011年首次提出。它是在FAST角点检测和BRIEF描述子的基础上进行改进得到的。ORB特征点具有实时性好、提取效果不错等优势，因此被广泛应用于需要实时处理任务的场景中(如著名的ORB-SLAM)，它旨在提供一种快速高效的替代方法，以取代SIFT算法，是目前最快速稳定的特征点检测和提取算法(ORB是SIFT算法的100倍，是SURF的10倍)。特点：角度不变性，尺度不变性，计算速度快。
+	
+	ORB特征点的提取过程如下：
+	\begin{enumerate}
+	\item 首先，使用FAST角点检测算法提取图像中的候选角点。
+	\item 对每个候选角点计算其方向，以便后续进行旋转不变性处理。
+	\item 使用BRIEF描述子对每个候选角点进行描述。
+	\end{enumerate}
+	
+	图\ref{fig:ORB角点提取结果}为FAST角点提取结果。与FAST角点检测器相比，ORB角点检测器具有以下优势：
+	\begin{enumerate}
+	\item 方向性：ORB角点检测器可以计算关键点的方向，从而提供旋转不变性。
+	\item 描述子：ORB角点检测器使用BRIEF描述子对每个关键点进行描述，这些描述子是一种二进制描述子，用于表示特征点。
+	\end{enumerate}
+	
+		\begin{figure}[t]
+			\centering
+			\subfigure[\normf{图像1的ORB角点提取结果}]{
+				\centering
+				\includegraphics[width=0.45\linewidth]{../data/orb/img1/marked_image.jpg}
+				\label{fig:图像1的ORB角点提取结果}
+			}
+			\subfigure[\normf{图像2的ORB角点提取结果}]{
+				\centering
+					\includegraphics[width=0.45\linewidth]{../data/orb/img2/marked_image.jpg}
+					
+					\label{fig:图像2的ORB角点提取结果}
+				}
+			\caption{\normf ORB角点提取结果}
+			\label{fig:ORB角点提取结果}
+			\end{figure}
+	
+	\subsection{\normf{SIFT角点}}
+	2004年，不列颠哥伦比亚大学的D.Lowe在他的论文《Distinctive Image Features from Scale-Invariant Keypoints》中提出了一种新算法——尺度不变特征变换（SIFT），该算法提取关键点并计算其描述符。
+	
+	SIFT算法主要涉及五个步骤：
+	\begin{enumerate}
+	\item 尺度空间极值检测：找到跨尺度和空间的局部最大值；
+	
+	\item 特征点定位：一旦找到潜在的关键点位置，就必须对其进行细化以获得更准确的结果。使用尺度空间的泰勒级数展开来获得更准确的极值位置，如果该极值处的强度小于阈值，则将其拒绝。
+	
+	\item 方向分配：为每个关键点分配一个方向，以实现图像旋转的不变性。
+	
+	\item 特征点描述符：选取关键点周围的邻域，分为小的子块。对于每个子块，创建直方图，而后表示为向量以形成关键点描述符。
+	
+	\item 特征点匹配：通过识别最近的邻居来匹配两个图像之间的关键点。但在某些情况下，第二个最接近的匹配可能非常接近第一个。这可能是由于噪音或其他原因造成的。在这种情况下，采用最近距离与次近距离之比。如果大于0.8，则被拒绝。
+	\end{enumerate}
+	
+	SIFT算法的主要优点在于：
+	\begin{enumerate}
+	\item 尺度不变性：SIFT算法可以在图像的不同尺度下检测和描述特征，使其对图像的缩放、旋转和仿射变换具有不变性。
+	\item 旋转不变性：SIFT算法可以检测和描述图像中的旋转特征，使其对图像的旋转具有不变性。
+	\item 局部性：SIFT算法提取的特征是局部特征，对遮挡和杂乱背景具有鲁棒性。
+	\item 独特性：SIFT算法提取的特征在图像中是独一无二的，可以与大量对象进行匹配。
+	\item 数量：SIFT算法可以生成许多特征点，即使是小物体也可以生成许多特征点。
+	\end{enumerate}
+	
+	图\ref{fig:SIFT角点提取结果}为SIFT角点提取结果。
+		\begin{figure}[t]
+			\centering
+			\subfigure[\normf{图像1的SIFT角点提取结果}]{
+				\centering
+				\includegraphics[width=0.45\linewidth]{../data/sift/img1/marked_image.jpg}
+				\label{fig:图像1的SIFT角点提取结果}
+			}
+			\subfigure[\normf{图像2的SIFT角点提取结果}]{
+				\centering
+					\includegraphics[width=0.45\linewidth]{../data/sift/img2/marked_image.jpg}
+					
+					\label{fig:图像2的SIFT角点提取结果}
+				}
+			\caption{\normf SIFT角点提取结果}
+			\label{fig:SIFT角点提取结果}
+			\end{figure}
+	
+	\subsection{\normf{SURF角点}}
+	2006 年，Bay, H.、Tuytelaars, T. 和 Van Gool, L 三人发表了另一篇论文《SURF：加速鲁棒特征》，引入了一种称为 SURF 的新算法。顾名思义，它是 SIFT 的加速版本。
+	
+	在 SIFT 中，Lowe 用高斯差分逼近高斯拉普拉斯算子来寻找尺度空间。SURF 更进一步，使用 Box Filter 来近似 LoG。这种近似的一大优点是，可以借助积分图像轻松计算与盒式滤波器的卷积。并且可以针对不同的规模并行完成。分析表明，它比 SIFT 快 3 倍，而性能与 SIFT 相当。SURF擅长处理模糊和旋转的图像，但不擅长处理视点变化和光照变化。
+	
+		
+		图\ref{fig:SURF角点提取结果}为SIFT角点提取结果。
+		\begin{figure}[t]
+			\centering
+			\subfigure[\normf{图像1的SURF角点提取结果}]{
+				\centering
+				\includegraphics[width=0.45\linewidth]{../data/surf/img1/marked_image.jpg}
+				\label{fig:图像1的SURF角点提取结果}
+			}
+			\subfigure[\normf{图像2的SURF角点提取结果}]{
+				\centering
+					\includegraphics[width=0.45\linewidth]{../data/surf/img2/marked_image.jpg}
+					
+					\label{fig:图像2的SURF角点提取结果}
+				}
+			\caption{\normf SURF角点提取结果}
+			\label{fig:SURF角点提取结果}
+			\end{figure}
+				
+	\section{\normf{直线提取}}
+	\normf
+	
+	\subsection{\normf LSD算法1}
+	
+	图\ref{fig:LSD1直线提取结果}为LSD1直线提取结果。
+	\begin{figure}[t]
+		\centering
+		\subfigure[\normf{图像1的LSD1直线提取结果}]{
+			\centering
+			\includegraphics[width=0.45\linewidth]{../data/lsd_sample/img1/marked_image.jpg}
+		}
+		\subfigure[\normf{图像2的LSD1直线提取结果}]{
+			\centering
+				\includegraphics[width=0.45\linewidth]{../data/lsd_sample/img2/marked_image.jpg}
+			}
+		\caption{\normf LSD1直线提取结果}
+		\label{fig:LSD1直线提取结果}
+		\end{figure}
+	
+	\subsection{\normf LSD算法2}
+	
+		图\ref{fig:LSD2直线提取结果}为LSD2直线提取结果。
+	\begin{figure}[t]
+		\centering
+		\subfigure[\normf{图像1的LSD2直线提取结果}]{
+			\centering
+			\includegraphics[width=0.45\linewidth]{../data/lsd_complex/img1/marked_image.jpg}
+		}
+		\subfigure[\normf{图像2的LSD2直线提取结果}]{
+			\centering
+				\includegraphics[width=0.45\linewidth]{../data/lsd_complex/img2/marked_image.jpg}
+			}
+		\caption{\normf LSD2直线提取结果}
+		\label{fig:LSD2直线提取结果}
+		\end{figure}
+	
+	\section{\normf{附录：代码}}
+	\begin{lstlisting}[caption={\normf 点和直线的数据结构}]
+	    struct Entity {
+	    public:
+	        static pangolin::ColourWheel WHEEL;
+	
+	        using Ptr = std::shared_ptr<Entity>;
+	
+	        virtual std::string Type() { return "Entity"; }
+	
+	        virtual void Draw(const cv::Mat &img) = 0;
+	    };
+	
+	    struct Corner : public Entity {
+	    public:
+	        using Ptr = std::shared_ptr<Corner>;
+	
+	    public:
+	        cv::Point2f p;
+	
+	    public:
+	        explicit Corner(cv::Point2f pos);
+	
+	        static Ptr Create(const cv::Point2f &pos);
+	
+	        std::string Type() override;
+	
+	        void Draw(const cv::Mat &img) override;
+	
+	        friend std::ostream &operator<<(std::ostream &os, const Corner &corner);
+	
+	    public:
+	        // Serialization
+	        template<class Archive>
+	        void serialize(Archive &archive) {
+	            archive(CEREAL_NVP(p));
+	        }
+	
+	    };
+	
+	    struct Line : public Entity {
+	    public:
+	        using Ptr = std::shared_ptr<Line>;
+	
+	    public:
+	        cv::Point2f p1, p2;
+	
+	        Line(cv::Point2f p1, cv::Point2f p2);
+	
+	        static Ptr Create(const cv::Point2f &p1, const cv::Point2f &p2);
+	
+	        std::string Type() override;
+	
+	        void Draw(const cv::Mat &img) override;
+	
+	        friend std::ostream &operator<<(std::ostream &os, const Line &line);
+	
+	    public:
+	        // Serialization
+	        template<class Archive>
+	        void serialize(Archive &archive) {
+	            archive(CEREAL_NVP(p1), CEREAL_NVP(p2));
+	        }
+	
+	    };
+	\end{lstlisting}
+	\begin{lstlisting}[caption={\normf Harris角点检测代码}]
+	    cv::Mat dstImg;
+	    cv::cornerHarris(img, dstImg, 2, 3, 0.04);
+	    mats.insert({"response", ns_mv::ConvertToVisibleMat(dstImg, 0.01, 0.01)});
+	
+	    // find the min and max value
+	    double min, max;
+	    cv::minMaxIdx(dstImg, &min, &max);
+	    // convert the dstImg to binary image based on the threshold
+	    cv::Mat filteredImg;
+	    cv::threshold(dstImg, filteredImg, (max + min) * 0.2, 255, cv::ThresholdTypes::THRESH_BINARY);
+	    mats.insert({"binary_corner", filteredImg});
+	
+	    // mark corners to source image
+	    cv::Mat markedImg;
+	    cv::cvtColor(img, markedImg, cv::COLOR_GRAY2BGR);
+	    int rows = img.rows, cols = img.cols;
+	    for (int i = 0; i < rows; ++i) {
+	        for (int j = 0; j < cols; ++j) {
+	            float val = filteredImg.at<float>(i, j);
+	            if (val == 255.0) {
+	                corners.push_back(Corner::Create(cv::Point2f((float) j, (float) i)));
+	            }
+	        }
+	    }
+	
+	    for (const auto &elem: corners) {
+	        elem->Draw(markedImg);
+	    }
+	    mats.insert({"marked_image", markedImg});
+	\end{lstlisting}
+	
+	\begin{lstlisting}[caption={\normf FAST角点检测代码}]
+	    auto detector = cv::FastFeatureDetector::create(60);
+	    std::vector<cv::KeyPoint> keyPoints;
+	    detector->detect(img, keyPoints);
+	
+	    for (const auto &point: keyPoints) {
+	        corners.push_back(Corner::Create(point.pt));
+	    }
+	
+	    // mark corners to source image
+	    cv::Mat markedImg;
+	    cv::cvtColor(img, markedImg, cv::COLOR_GRAY2BGR);
+	    for (const auto &cor: corners) {
+	        cor->Draw(markedImg);
+	    }
+	    mats.insert({"marked_image", markedImg});
+	\end{lstlisting}
+	\begin{lstlisting}[caption={\normf ORB角点检测代码}]
+	    auto detector = cv::ORB::create(1000);
+	    std::vector<cv::KeyPoint> keyPoints;
+	    detector->detect(img, keyPoints);
+	
+	    for (const auto &point: keyPoints) {
+	        corners.push_back(Corner::Create(point.pt));
+	    }
+	
+	    // mark corners to source image
+	    cv::Mat markedImg;
+	    cv::cvtColor(img, markedImg, cv::COLOR_GRAY2BGR);
+	    for (const auto &cor: corners) {
+	        cor->Draw(markedImg);
+	    }
+	    mats.insert({"marked_image", markedImg});
+	\end{lstlisting}
+	\begin{lstlisting}[caption={\normf SIFT角点检测代码}]
+	    auto detector = cv::SIFT::create(1000);
+	    std::vector<cv::KeyPoint> keyPoints;
+	    detector->detect(img, keyPoints);
+	    for (const auto &point: keyPoints) {
+	        corners.push_back(Corner::Create(point.pt));
+	    }
+	
+	    // mark corners to source image
+	    cv::Mat markedImg;
+	    cv::cvtColor(img, markedImg, cv::COLOR_GRAY2BGR);
+	    for (const auto &cor: corners) {
+	        cor->Draw(markedImg);
+	    }
+	    mats.insert({"marked_image", markedImg});
+	\end{lstlisting}
+	\begin{lstlisting}[caption={\normf SURF角点检测代码}]
+	    auto detector = cv::xfeatures2d::SURF::create(1000);
+	    std::vector<cv::KeyPoint> keyPoints;
+	    detector->detect(img, keyPoints);
+	
+	    for (const auto &point: keyPoints) {
+	        corners.push_back(Corner::Create(point.pt));
+	    }
+	
+	    // mark corners to source image
+	    cv::Mat markedImg;
+	    cv::cvtColor(img, markedImg, cv::COLOR_GRAY2BGR);
+	    for (const auto &cor: corners) {
+	        cor->Draw(markedImg);
+	    }
+	    mats.insert({"marked_image", markedImg});
+	\end{lstlisting}
+	\begin{lstlisting}[caption={\normf LSD1直线提取代码}]
+	    auto lsd = cv::createLineSegmentDetector();
+	    std::vector<cv::Vec4f> cvLines;
+	    lsd->detect(img, cvLines);
+	
+	    // mark corners to source image
+	    for (const auto &elem: cvLines) {
+	        lines.push_back(Line::Create({elem[0], elem[1]}, {elem[2], elem[3]}));
+	    }
+	    cv::Mat markedImg;
+	    cv::cvtColor(img, markedImg, cv::COLOR_GRAY2BGR);
+	    for (const auto &elem: lines) {
+	        elem->Draw(markedImg);
+	    }
+	    mats.insert({"marked_image", markedImg});
+	\end{lstlisting}
+	\begin{lstlisting}[caption={\normf LSD2直线提取代码}]
+	    auto lsd = cv::line_descriptor::LSDDetector::createLSDDetector();
+	    std::vector<cv::line_descriptor::KeyLine> cvLines;
+	    lsd->detect(img, cvLines, 2, 1);
+	
+	    // mark corners to source image
+	    for (const auto &elem: cvLines) {
+	        lines.push_back(Line::Create({elem.startPointX, elem.startPointY},
+	                                     {elem.endPointX, elem.ePointInOctaveY}));
+	    }
+	    cv::Mat markedImg;
+	    cv::cvtColor(img, markedImg, cv::COLOR_GRAY2BGR);
+	    for (const auto &elem: lines) {
+	        elem->Draw(markedImg);
+	    }
+	    mats.insert({"marked_image", markedImg});
+	\end{lstlisting}
+\end{document}
+

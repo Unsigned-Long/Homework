@@ -11,13 +11,13 @@
 #include "cereal/archives/json.hpp"
 #include "cereal/types/vector.hpp"
 
-void DetectCorners(const std::string &imgPath, std::string outputFolder) {
+void DetectCorners(const std::string &imgPath, const std::string &outputFolder) {
     auto img = cv::imread(imgPath, cv::IMREAD_UNCHANGED);
     // convert to gray image
     cv::Mat gImg;
     cv::cvtColor(img, gImg, cv::COLOR_BGR2GRAY);
 
-    auto res = ns_mv::CornerExtractor::Create(ns_mv::CornerExtractor::ExtractorType::FAST)->Process(gImg);
+    auto res = ns_mv::CornerExtractor::Create(ns_mv::CornerExtractor::ExtractorType::HARRIS)->Process(gImg);
 
     // output
     if (!std::filesystem::exists(outputFolder)) {
@@ -38,12 +38,12 @@ void DetectCorners(const std::string &imgPath, std::string outputFolder) {
     {
         for (const auto &[name, mat]: res.second) {
             std::cout << "save image named '" << name << "'" << std::endl;
-            cv::imwrite(outputFolder.append("/" + name + ".jpg"), mat);
+            cv::imwrite(outputFolder + "/" + name + ".jpg", mat);
         }
     }
 }
 
-void DetectLines(const std::string &imgPath, std::string outputFolder) {
+void DetectLines(const std::string &imgPath, const std::string &outputFolder) {
     auto img = cv::imread(imgPath, cv::IMREAD_UNCHANGED);
     // convert to gray image
     cv::Mat gImg;
@@ -70,7 +70,7 @@ void DetectLines(const std::string &imgPath, std::string outputFolder) {
     {
         for (const auto &[name, mat]: res.second) {
             std::cout << "save image named '" << name << "'" << std::endl;
-            cv::imwrite(outputFolder.append("/" + name + ".jpg"), mat);
+            cv::imwrite(outputFolder + "/" + name + ".jpg", mat);
         }
     }
 }
@@ -78,10 +78,10 @@ void DetectLines(const std::string &imgPath, std::string outputFolder) {
 int main(int argc, char **argv) {
     try {
         std::string imgPath = "/home/csl/Homework/machine_vision/prog1/data/img2.jpg";
-        std::string outputFolder = "/home/csl/Homework/machine_vision/prog1/data/lsd_complex/img2";
+        std::string outputFolder = "/home/csl/Homework/machine_vision/prog1/data/harris/img2";
 
-        // DetectCorners(imgPath, outputFolder);
-        DetectLines(imgPath, outputFolder);
+        DetectCorners(imgPath, outputFolder);
+//        DetectLines(imgPath, outputFolder);
     } catch (const std::exception &e) {
         std::cout << "error happens: " << e.what() << std::endl;
         return 1;
