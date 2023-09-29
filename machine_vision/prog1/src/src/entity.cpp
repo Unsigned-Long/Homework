@@ -32,7 +32,7 @@ namespace ns_mv {
         );
     }
 
-    Line::Line(cv::Point2f p1, cv::Point2f p2) : p1(std::move(p1)), p2(std::move(p2)) {}
+    Line::Line(cv::Point2f p1, cv::Point2f p2) : p1(p1), p2(p2) {}
 
     std::string Line::Type() {
         return "Line";
@@ -49,6 +49,7 @@ namespace ns_mv {
     }
 
     void Line::Draw(const cv::Mat &img) {
-
+        auto color = WHEEL.GetUniqueColour();
+        cv::line(img, p1, p2, cv::Scalar(color.b * 255.0, color.g * 255.0, color.r * 255.0), 2);
     }
 }

@@ -1,4 +1,4 @@
-
+set(OpenCV_DIR /home/csl/Software/opencv-4.x/build)
 find_package(OpenCV REQUIRED)
 
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src SRC_FILES)

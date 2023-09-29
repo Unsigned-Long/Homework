@@ -43,10 +43,16 @@ namespace ns_mv {
     public:
         using Ptr = std::shared_ptr<LineExtractor>;
 
-    public:
-        LineExtractor();
+        enum class ExtractorType {
+            LSD_SAMPLE, LSD_COMPLEX
+        };
 
-        static Ptr Create();
+        ExtractorType type;
+
+    public:
+        explicit LineExtractor(ExtractorType type);
+
+        static Ptr Create(ExtractorType type);
 
         std::pair<std::vector<Entity::Ptr>, std::map<std::string, cv::Mat>> Process(cv::Mat img) override;
     };

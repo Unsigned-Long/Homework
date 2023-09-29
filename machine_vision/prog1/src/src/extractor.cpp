@@ -5,8 +5,10 @@
 
 #include "extractor.h"
 #include "opencv4/opencv2/imgproc.hpp"
-#include "opencv4/opencv2/features2d.hpp"
+#include "opencv4/opencv2/features2d/features2d.hpp"
 #include "opencv2/highgui/highgui.hpp"
+#include "opencv2/xfeatures2d.hpp"
+#include "opencv2/line_descriptor.hpp"
 
 namespace ns_mv {
 
@@ -52,28 +54,83 @@ namespace ns_mv {
                 break;
             case ExtractorType::SIFT: {
                 std::cout << "SIFT" << std::endl;
+                auto detector = cv::SIFT::create(1000);
+                std::vector<cv::KeyPoint> keyPoints;
+                detector->detect(img, keyPoints);
+                for (const auto &point: keyPoints) {
+                    corners.push_back(Corner::Create(point.pt));
+                }
 
+                // mark corners to source image
+                cv::Mat markedImg;
+                cv::cvtColor(img, markedImg, cv::COLOR_GRAY2BGR);
+                for (const auto &cor: corners) {
+                    cor->Draw(markedImg);
+                }
+                mats.insert({"marked_image", markedImg});
             }
                 break;
             case ExtractorType::SURF: {
                 std::cout << "SURF" << std::endl;
+                auto detector = cv::xfeatures2d::SURF::create(1000);
+                std::vector<cv::KeyPoint> keyPoints;
+                detector->detect(img, keyPoints);
 
+                for (const auto &point: keyPoints) {
+                    corners.push_back(Corner::Create(point.pt));
+                }
+
+                // mark corners to source image
+                cv::Mat markedImg;
+                cv::cvtColor(img, markedImg, cv::COLOR_GRAY2BGR);
+                for (const auto &cor: corners) {
+                    cor->Draw(markedImg);
+                }
+                mats.insert({"marked_image", markedImg});
             }
                 break;
             case ExtractorType::ORB: {
                 std::cout << "ORB" << std::endl;
+                auto detector = cv::ORB::create(1000);
+                std::vector<cv::KeyPoint> keyPoints;
+                detector->detect(img, keyPoints);
 
+                for (const auto &point: keyPoints) {
+                    corners.push_back(Corner::Create(point.pt));
+                }
+
+                // mark corners to source image
+                cv::Mat markedImg;
+                cv::cvtColor(img, markedImg, cv::COLOR_GRAY2BGR);
+                for (const auto &cor: corners) {
+                    cor->Draw(markedImg);
+                }
+                mats.insert({"marked_image", markedImg});
             }
                 break;
             case ExtractorType::FAST: {
                 std::cout << "FAST" << std::endl;
+                auto detector = cv::FastFeatureDetector::create(60);
+                std::vector<cv::KeyPoint> keyPoints;
+                detector->detect(img, keyPoints);
 
+                for (const auto &point: keyPoints) {
+                    corners.push_back(Corner::Create(point.pt));
+                }
+
+                // mark corners to source image
+                cv::Mat markedImg;
+                cv::cvtColor(img, markedImg, cv::COLOR_GRAY2BGR);
+                for (const auto &cor: corners) {
+                    cor->Draw(markedImg);
+                }
+                mats.insert({"marked_image", markedImg});
             }
                 break;
         }
-//        for (const auto &[name, mat]: mats) {
-//            ShowImg(mat, name);
-//        }
+        // for (const auto &[name, mat]: mats) {
+        //     ShowImg(mat, name);
+        // }
         return {corners, mats};
     }
 
@@ -83,14 +140,56 @@ namespace ns_mv {
 
     CornerExtractor::CornerExtractor(CornerExtractor::ExtractorType type) : type(type) {}
 
-    LineExtractor::LineExtractor() = default;
 
     std::pair<std::vector<Entity::Ptr>, std::map<std::string, cv::Mat>> LineExtractor::Process(cv::Mat img) {
         std::vector<Entity::Ptr> lines;
-        return {};
+        std::map<std::string, cv::Mat> mats;
+        switch (type) {
+
+            case ExtractorType::LSD_SAMPLE: {
+                std::cout << "LSD_SAMPLE" << std::endl;
+                auto lsd = cv::createLineSegmentDetector();
+                std::vector<cv::Vec4f> cvLines;
+                lsd->detect(img, cvLines);
+
+                // mark corners to source image
+                for (const auto &elem: cvLines) {
+                    lines.push_back(Line::Create({elem[0], elem[1]}, {elem[2], elem[3]}));
+                }
+                cv::Mat markedImg;
+                cv::cvtColor(img, markedImg, cv::COLOR_GRAY2BGR);
+                for (const auto &elem: lines) {
+                    elem->Draw(markedImg);
+                }
+                mats.insert({"marked_image", markedImg});
+            }
+                break;
+            case ExtractorType::LSD_COMPLEX: {
+                std::cout << "LSD_COMPLEX" << std::endl;
+                auto lsd = cv::line_descriptor::LSDDetector::createLSDDetector();
+                std::vector<cv::line_descriptor::KeyLine> cvLines;
+                lsd->detect(img, cvLines, 2, 1);
+
+                // mark corners to source image
+                for (const auto &elem: cvLines) {
+                    lines.push_back(Line::Create({elem.startPointX, elem.startPointY},
+                                                 {elem.endPointX, elem.ePointInOctaveY}));
+                }
+                cv::Mat markedImg;
+                cv::cvtColor(img, markedImg, cv::COLOR_GRAY2BGR);
+                for (const auto &elem: lines) {
+                    elem->Draw(markedImg);
+                }
+                mats.insert({"marked_image", markedImg});
+            }
+                break;
+        }
+        return {lines, mats};
     }
 
-    LineExtractor::Ptr LineExtractor::Create() {
-        return std::make_shared<LineExtractor>();
+    LineExtractor::Ptr LineExtractor::Create(LineExtractor::ExtractorType type) {
+        return std::make_shared<LineExtractor>(type);
     }
+
+    LineExtractor::LineExtractor(LineExtractor::ExtractorType type) : type(type) {}
 }
