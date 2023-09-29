@@ -9,6 +9,7 @@
 #include "memory"
 #include "entity.h"
 #include "opencv4/opencv2/core.hpp"
+#include "map"
 
 namespace ns_mv {
     class Extractor {
@@ -18,7 +19,7 @@ namespace ns_mv {
     public:
         Extractor();
 
-        virtual std::vector<Entity::Ptr> Process(cv::Mat img) = 0;
+        virtual std::pair<std::vector<Entity::Ptr>, std::map<std::string, cv::Mat>> Process(cv::Mat img) = 0;
     };
 
     class CornerExtractor : public Extractor {
@@ -35,7 +36,7 @@ namespace ns_mv {
 
         static Ptr Create(ExtractorType type);
 
-        std::vector<Entity::Ptr> Process(cv::Mat img) override;
+        std::pair<std::vector<Entity::Ptr>, std::map<std::string, cv::Mat>> Process(cv::Mat img) override;
     };
 
     class LineExtractor : public Extractor {
@@ -47,7 +48,7 @@ namespace ns_mv {
 
         static Ptr Create();
 
-        std::vector<Entity::Ptr> Process(cv::Mat img) override;
+        std::pair<std::vector<Entity::Ptr>, std::map<std::string, cv::Mat>> Process(cv::Mat img) override;
     };
 }
 

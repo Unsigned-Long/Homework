@@ -6,17 +6,45 @@
 #include "extractor.h"
 #include "opencv2/imgcodecs/imgcodecs.hpp"
 #include "opencv2/highgui/highgui.hpp"
+#include "filesystem"
+#include "fstream"
+#include "cereal/archives/json.hpp"
+#include "cereal/types/vector.hpp"
 
 int main(int argc, char **argv) {
     try {
         std::string imgPath = "/home/csl/Homework/machine_vision/prog1/data/img1.jpg";
+        std::string outputFolder = "/home/csl/Homework/machine_vision/prog1/data/sift/img1";
         auto img = cv::imread(imgPath, cv::IMREAD_UNCHANGED);
+        // convert to gray image
+        cv::Mat gImg;
+        cv::cvtColor(img, gImg, cv::COLOR_BGR2GRAY);
 
-        ns_mv::CornerExtractor::Create(ns_mv::CornerExtractor::ExtractorType::HARRIS)->Process(img);
+        auto res = ns_mv::CornerExtractor::Create(ns_mv::CornerExtractor::ExtractorType::SIFT)->Process(gImg);
 
-        // cv::namedWindow("win", cv::WindowPropertyFlags::WND_PROP_ASPECT_RATIO);
-        // cv::imshow("win", img);
-        // cv::waitKey(0);
+        // output
+        if (!std::filesystem::exists(outputFolder)) {
+            std::filesystem::create_directories(outputFolder);
+        }
+        // corners
+        std::vector<ns_mv::Corner> corners;
+        std::transform(res.first.begin(), res.first.end(), std::back_inserter(corners),
+                       [](const ns_mv::Entity::Ptr &cor) {
+                           return *dynamic_cast<ns_mv::Corner *>(cor.get());
+                       });
+        {
+            std::cout << "save corners: " << corners.size() << std::endl;
+            std::ofstream file(outputFolder + "/corner.json");
+            cereal::JSONOutputArchive ar(file);
+            ar(cereal::make_nvp("corners", corners));
+        }
+        {
+            for (const auto &[name, mat]: res.second) {
+                std::cout << "save image named '" << name << "'" << std::endl;
+                cv::imwrite(outputFolder.append("/" + name + ".jpg"), mat);
+            }
+        }
+
     } catch (const std::exception &e) {
         std::cout << "error happens: " << e.what() << std::endl;
         return 1;

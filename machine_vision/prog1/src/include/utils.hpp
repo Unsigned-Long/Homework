@@ -6,50 +6,37 @@
 #ifndef EXTRACTOR_UTILS_HPP
 #define EXTRACTOR_UTILS_HPP
 
-#include "Eigen/Dense"
 #include "cereal/cereal.hpp"
 #include "opencv2/highgui.hpp"
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 
-namespace Eigen {
-    template<class Archive, typename ScaleType, int Rows, int Cols>
-    void serialize(Archive &archive, Eigen::Matrix<ScaleType, Rows, Cols> &m) {
-        for (int i = 0; i < Rows; ++i) {
-            for (int j = 0; j < Cols; ++j) {
-                archive(cereal::make_nvp('r' + std::to_string(i) + 'c' + std::to_string(j), m(i, j)));
-            }
-        }
-    }
-
-    template<class Archive, typename ScaleType, int Cols>
-    void serialize(Archive &archive, Eigen::Matrix<ScaleType, Eigen::Dynamic, Cols> &m) {
-        for (int i = 0; i < m.rows(); ++i) {
-            for (int j = 0; j < Cols; ++j) {
-                archive(cereal::make_nvp('r' + std::to_string(i) + 'c' + std::to_string(j), m(i, j)));
-            }
-        }
-    }
-
+namespace cv {
     template<class Archive, typename ScaleType>
-    void serialize(Archive &archive, Eigen::Matrix<ScaleType, Eigen::Dynamic, Eigen::Dynamic> &m) {
-        for (int i = 0; i < m.rows(); ++i) {
-            for (int j = 0; j < m.cols(); ++j) {
-                archive(cereal::make_nvp('r' + std::to_string(i) + 'c' + std::to_string(j), m(i, j)));
-            }
-        }
+    void serialize(Archive &archive, cv::Point_<ScaleType> &p) {
+        archive(cereal::make_nvp("x", p.x), cereal::make_nvp("y", p.y));
     }
 }
 
 namespace ns_mv {
-    static cv::Mat ConvertToVisibleMat(const cv::Mat &fImg) {
+    static cv::Mat
+    ConvertToVisibleMat(const cv::Mat &fImg, double maxScale = 1.0, double minScale = 1.0, bool color = true) {
         double min, max;
         cv::minMaxIdx(fImg, &min, &max);
+        max *= maxScale;
+        min *= minScale;
         cv::Mat adjMap;
-        fImg.convertTo(adjMap, CV_8UC3, 255 / (max - min), -min);
-        cv::Mat falseColorsMap;
-        cv::applyColorMap(adjMap, falseColorsMap, cv::COLORMAP_COOL);
-        return adjMap;
+        // v_new = (v_old-min) / (max - min) * 255
+        // v_new = v_old * 255 / (max - min) - min * 255 / (max - min)
+        fImg.convertTo(adjMap, CV_8UC1, 255 / (max - min), -min * 255 / (max - min));
+        if (color) {
+            cv::Mat falseColorsMap;
+            cv::applyColorMap(adjMap, falseColorsMap, cv::ColormapTypes::COLORMAP_HOT);
+            return falseColorsMap;
+        } else {
+            return adjMap;
+        }
+
     }
 
     static void ShowImg(const cv::Mat &img, const std::string &winName = "win") {
@@ -57,7 +44,6 @@ namespace ns_mv {
         cv::imshow(winName, img);
         cv::waitKey(0);
     }
-
 }
 
 

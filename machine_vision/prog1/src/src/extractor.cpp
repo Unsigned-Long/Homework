@@ -12,38 +12,69 @@ namespace ns_mv {
 
     Extractor::Extractor() = default;
 
-    std::vector<Entity::Ptr> CornerExtractor::Process(cv::Mat img) {
+    std::pair<std::vector<Entity::Ptr>, std::map<std::string, cv::Mat>> CornerExtractor::Process(cv::Mat img) {
         std::vector<Entity::Ptr> corners;
+        std::map<std::string, cv::Mat> mats;
         switch (type) {
             case ExtractorType::HARRIS: {
-                // convert to gray image
-                cv::Mat gImg;
-                cv::cvtColor(img, gImg, cv::COLOR_BGR2GRAY);
+                std::cout << "HARRIS" << std::endl;
                 // perform harris corner detect
                 cv::Mat dstImg;
-                cv::cornerHarris(gImg, dstImg, 3, 3, 0.04);
-                // show the dst image
-                ns_mv::ShowImg(ns_mv::ConvertToVisibleMat(dstImg));
+                cv::cornerHarris(img, dstImg, 2, 3, 0.04);
+                mats.insert({"response", ns_mv::ConvertToVisibleMat(dstImg, 0.01, 0.01)});
+
+                // find the min and max value
+                double min, max;
+                cv::minMaxIdx(dstImg, &min, &max);
+                // convert the dstImg to binary image based on the threshold
+                cv::Mat filteredImg;
+                cv::threshold(dstImg, filteredImg, (max + min) * 0.2, 255, cv::ThresholdTypes::THRESH_BINARY);
+                mats.insert({"binary_corner", filteredImg});
+
+                // mark corners to source image
+                cv::Mat markedImg;
+                cv::cvtColor(img, markedImg, cv::COLOR_GRAY2BGR);
+                int rows = img.rows, cols = img.cols;
+                for (int i = 0; i < rows; ++i) {
+                    for (int j = 0; j < cols; ++j) {
+                        float val = filteredImg.at<float>(i, j);
+                        if (val == 255.0) {
+                            corners.push_back(Corner::Create(cv::Point2f((float) j, (float) i)));
+                        }
+                    }
+                }
+
+                for (const auto &elem: corners) {
+                    elem->Draw(markedImg);
+                }
+                mats.insert({"marked_image", markedImg});
             }
                 break;
             case ExtractorType::SIFT: {
+                std::cout << "SIFT" << std::endl;
 
             }
                 break;
             case ExtractorType::SURF: {
+                std::cout << "SURF" << std::endl;
 
             }
                 break;
             case ExtractorType::ORB: {
+                std::cout << "ORB" << std::endl;
 
             }
                 break;
             case ExtractorType::FAST: {
+                std::cout << "FAST" << std::endl;
 
             }
                 break;
         }
-        return corners;
+//        for (const auto &[name, mat]: mats) {
+//            ShowImg(mat, name);
+//        }
+        return {corners, mats};
     }
 
     CornerExtractor::Ptr CornerExtractor::Create(CornerExtractor::ExtractorType type) {
@@ -54,9 +85,9 @@ namespace ns_mv {
 
     LineExtractor::LineExtractor() = default;
 
-    std::vector<Entity::Ptr> LineExtractor::Process(cv::Mat img) {
+    std::pair<std::vector<Entity::Ptr>, std::map<std::string, cv::Mat>> LineExtractor::Process(cv::Mat img) {
         std::vector<Entity::Ptr> lines;
-        return lines;
+        return {};
     }
 
     LineExtractor::Ptr LineExtractor::Create() {

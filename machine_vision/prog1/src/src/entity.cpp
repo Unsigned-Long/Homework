@@ -7,31 +7,48 @@
 #include <utility>
 
 namespace ns_mv {
+    pangolin::ColourWheel Entity::WHEEL = pangolin::ColourWheel(1.0);
 
     std::string Corner::Type() {
         return "Corner";
     }
 
-    Corner::Corner(Eigen::Vector2f pos) : p(std::move(pos)) {}
-
-    float Corner::GetY() const { return p(1); }
-
-    float Corner::GetX() const { return p(0); }
+    Corner::Corner(cv::Point2f pos) : p(std::move(pos)) {}
 
     std::ostream &operator<<(std::ostream &os, const Corner &corner) {
-        os << "'x': " << corner.GetX() << ", 'y': " << corner.GetY();
+        os << "'x': " << corner.p.x << ", 'y': " << corner.p.y;
         return os;
     }
 
-    Line::Line(Eigen::Vector2f p1, Eigen::Vector2f p2) : p1(std::move(p1)), p2(std::move(p2)) {}
+    Corner::Ptr Corner::Create(const cv::Point2f &pos) {
+        return std::make_shared<Corner>(pos);
+    }
+
+    void Corner::Draw(const cv::Mat &img) {
+        auto color = WHEEL.GetUniqueColour();
+        cv::drawMarker(
+                img, p, cv::Scalar(color.b * 255.0, color.g * 255.0, color.r * 255.0),
+                cv::MarkerTypes::MARKER_TILTED_CROSS, 10, 2
+        );
+    }
+
+    Line::Line(cv::Point2f p1, cv::Point2f p2) : p1(std::move(p1)), p2(std::move(p2)) {}
 
     std::string Line::Type() {
         return "Line";
     }
 
     std::ostream &operator<<(std::ostream &os, const Line &line) {
-        os << "'x1': " << line.p1(0) << ", 'y1': " << line.p1(1)
-           << "'x2': " << line.p2(0) << ", 'y2': " << line.p2(1);
+        os << "'x1': " << line.p1.x << ", 'y1': " << line.p1.y
+           << "'x2': " << line.p2.x << ", 'y2': " << line.p2.y;
         return os;
+    }
+
+    Line::Ptr Line::Create(const cv::Point2f &p1, const cv::Point2f &p2) {
+        return std::make_shared<Line>(p1, p2);
+    }
+
+    void Line::Draw(const cv::Mat &img) {
+
     }
 }

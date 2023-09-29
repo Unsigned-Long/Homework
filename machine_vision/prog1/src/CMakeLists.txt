@@ -1,6 +1,5 @@
 
 find_package(OpenCV REQUIRED)
-find_package(Eigen3 REQUIRED)
 
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src SRC_FILES)
 
@@ -10,7 +9,6 @@ target_include_directories(
         extractor_lib PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${OpenCV_INCLUDE_DIRS}
-        ${EIGEN3_INCLUDE_DIRS}
 )
 
 target_link_libraries(

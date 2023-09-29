@@ -8,14 +8,19 @@
 
 #include <ostream>
 #include "memory"
+#include "colour.h"
 #include "utils.hpp"
 
 namespace ns_mv {
     struct Entity {
     public:
+        static pangolin::ColourWheel WHEEL;
+
         using Ptr = std::shared_ptr<Entity>;
 
         virtual std::string Type() { return "Entity"; }
+
+        virtual void Draw(const cv::Mat &img) = 0;
     };
 
     struct Corner : public Entity {
@@ -23,16 +28,16 @@ namespace ns_mv {
         using Ptr = std::shared_ptr<Corner>;
 
     public:
-        Eigen::Vector2f p;
+        cv::Point2f p;
 
     public:
-        explicit Corner(Eigen::Vector2f pos);
+        explicit Corner(cv::Point2f pos);
 
-        [[nodiscard]] float GetX() const;
-
-        [[nodiscard]] float GetY() const;
+        static Ptr Create(const cv::Point2f &pos);
 
         std::string Type() override;
+
+        void Draw(const cv::Mat &img) override;
 
         friend std::ostream &operator<<(std::ostream &os, const Corner &corner);
 
@@ -50,11 +55,15 @@ namespace ns_mv {
         using Ptr = std::shared_ptr<Line>;
 
     public:
-        Eigen::Vector2f p1, p2;
+        cv::Point2f p1, p2;
 
-        Line(Eigen::Vector2f p1, Eigen::Vector2f p2);
+        Line(cv::Point2f p1, cv::Point2f p2);
+
+        static Ptr Create(const cv::Point2f &p1, const cv::Point2f &p2);
 
         std::string Type() override;
+
+        void Draw(const cv::Mat &img) override;
 
         friend std::ostream &operator<<(std::ostream &os, const Line &line);
 
