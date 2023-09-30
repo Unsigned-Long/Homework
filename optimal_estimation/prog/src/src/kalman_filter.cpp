@@ -58,6 +58,7 @@ namespace ns_kf {
 
         Eigen::Matrix4d errorMat = ErrorTransitionMat(estState, t - estState.timestamp);
         preState.var = phiMat * estState.var * phiMat.transpose() + errorMat;
+        return *this;
     }
 
     MesManager KalmanFilter::MesPrediction(const StateManager &curState) {
@@ -76,7 +77,7 @@ namespace ns_kf {
         return m;
     }
 
-    KalmanFilter &KalmanFilter::MesUpdateSequentially(const MesManager &mes) {
+    KalmanFilter &KalmanFilter::MesUpdateSequentially1(const MesManager &mes) {
         // update based range measurement
         {
             double v1 = mes.range - MesPrediction(preState).range;
@@ -99,6 +100,32 @@ namespace ns_kf {
         return *this;
     }
 
+
+    KalmanFilter &KalmanFilter::MesUpdateSequentially2(const MesManager &mes) {
+        // update based alpha measurement
+        {
+            double v2 = mes.alpha - MesPrediction(preState).alpha;
+            Eigen::Matrix<double, 1, 4> h2 = MeasurementMat(preState).row(1);
+            Eigen::Vector4d k2 = preState.var * h2.transpose()
+                                 / ((h2 * preState.var * h2.transpose())(0, 0) + mes.sigma_a * mes.sigma_a);
+            preState.state = preState.state + k2 * v2;
+            preState.var = (Eigen::Matrix4d::Identity() - k2 * h2) * preState.var;
+        }
+        // update based range measurement
+        {
+            double v1 = mes.range - MesPrediction(preState).range;
+            Eigen::Matrix<double, 1, 4> h1 = MeasurementMat(preState).row(0);
+            Eigen::Vector4d k1 = preState.var * h1.transpose()
+                                 / ((h1 * preState.var * h1.transpose())(0, 0) + mes.sigma_r * mes.sigma_r);
+            preState.state = preState.state + k1 * v1;
+            preState.var = (Eigen::Matrix4d::Identity() - k1 * h1) * preState.var;
+        }
+        estState = preState;
+        return *this;
+        return *this;
+    }
+
+
     KalmanFilter &KalmanFilter::MesUpdateGlobal(const MesManager &mes) {
         Eigen::Vector2d v = mes.MesVec() - MesPrediction(preState).MesVec();
         Eigen::Matrix<double, 2, 4> h = MeasurementMat(preState);
@@ -114,4 +141,14 @@ namespace ns_kf {
             : estState(initState), preState(initState), kx(kx), ky(ky),
               gravity(gravity), sigma_ex(sigmaEx), sigma_ey(sigmaEy),
               sigma_ex2(sigma_ex * sigma_ex), sigma_ey2(sigma_ey * sigma_ey) {}
+
+    KalmanFilter::Ptr
+    KalmanFilter::Create(const StateManager &initState, double kx, double ky, double gravity, double sigmaEx,
+                         double sigmaEy) {
+        return std::make_shared<KalmanFilter>(initState, kx, ky, gravity, sigmaEx, sigmaEy);
+    }
+
+    const StateManager &KalmanFilter::GetEstState() const {
+        return estState;
+    }
 }

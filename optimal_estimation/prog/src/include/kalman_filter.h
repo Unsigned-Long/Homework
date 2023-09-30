@@ -9,7 +9,7 @@
 #include <utility>
 #include <ostream>
 #include "state_manager.h"
-#include "measurement_manager.h"
+#include "mes_manager.h"
 
 namespace ns_kf {
 
@@ -30,11 +30,18 @@ namespace ns_kf {
         KalmanFilter(const StateManager &initState, double kx, double ky,
                      double gravity, double sigmaEx, double sigmaEy);
 
+        static Ptr Create(const StateManager &initState, double kx, double ky,
+                          double gravity, double sigmaEx, double sigmaEy);
+
         KalmanFilter &StateTransition(double t);
 
-        KalmanFilter &MesUpdateSequentially(const MesManager &mes);
+        KalmanFilter &MesUpdateSequentially1(const MesManager &mes);
+
+        KalmanFilter &MesUpdateSequentially2(const MesManager &mes);
 
         KalmanFilter &MesUpdateGlobal(const MesManager &mes);
+
+        const StateManager &GetEstState() const;
 
     protected:
         [[nodiscard]] Eigen::Matrix4d StateTransitionMat(const StateManager &curState, double dt) const;

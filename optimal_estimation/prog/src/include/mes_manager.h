@@ -3,8 +3,8 @@
 // the school of Geodesy and Geomatics, Wuhan University. His area of research currently focuses on integrated navigation
 // systems and multi-sensor fusion.
 
-#ifndef KALMAN_FILTER_MEASUREMENT_MANAGER_H
-#define KALMAN_FILTER_MEASUREMENT_MANAGER_H
+#ifndef KALMAN_FILTER_MES_MANAGER_H
+#define KALMAN_FILTER_MES_MANAGER_H
 
 #include <ostream>
 #include "utils.hpp"
@@ -35,4 +35,4 @@ namespace ns_kf {
     };
 }
 
-#endif //KALMAN_FILTER_MEASUREMENT_MANAGER_H
+#endif //KALMAN_FILTER_MES_MANAGER_H

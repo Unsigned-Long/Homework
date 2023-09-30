@@ -268,20 +268,24 @@
 	=\boldsymbol{H}\cdot\boldsymbol{X}(t_k)	+\boldsymbol{\Delta}_z
 	\end{equation}
 	
-	\subsection{\normf 观测值逐次更新的扩展卡尔曼滤波}
+	\subsection{\normf 扩展卡尔曼滤波}
+	\subsubsection{\normf 状态预测和方差传播}
 	已知$t_{k-1}$时刻的状态$\boldsymbol{X}(t_{k-1})$及其方差$\boldsymbol{D}_{\boldsymbol{X}}(t_{k-1})$，首先通过状态转移方程进行状态预测和方差传播：
-	\begin{equation}
-	\begin{cases}
-	\begin{aligned}
-	\boldsymbol{X}(t_k,t_{k-1})&=
-		\boldsymbol{\Phi}(t_k,t_{k-1})\cdot\boldsymbol{X}(t_{k-1})
-		+\boldsymbol{c}(t_k,t_{k-1})
-		\\
-		\boldsymbol{D}_{\boldsymbol{X}}(t_k,t_{k-1})&=\boldsymbol{\Phi}(t_k,t_{k-1})\cdot\boldsymbol{D}_{\boldsymbol{X}}(t_k)\cdot\boldsymbol{\Phi}^\top(t_k,t_{k-1})+\boldsymbol{D}_{w}(t_{k-1})
-	\end{aligned}
-	\end{cases}
-	\end{equation}
-	而后基于量测值进行逐次的测量更新。首先计算残差：
+		\begin{equation}
+		\begin{cases}
+		\begin{aligned}
+		\boldsymbol{X}(t_k,t_{k-1})&=
+			\boldsymbol{\Phi}(t_k,t_{k-1})\cdot\boldsymbol{X}(t_{k-1})
+			+\boldsymbol{c}(t_k,t_{k-1})
+			\\
+			\boldsymbol{D}_{\boldsymbol{X}}(t_k,t_{k-1})&=\boldsymbol{\Phi}(t_k,t_{k-1})\cdot\boldsymbol{D}_{\boldsymbol{X}}(t_k)\cdot\boldsymbol{\Phi}^\top(t_k,t_{k-1})+\boldsymbol{D}_{w}(t_{k-1})
+		\end{aligned}
+		\end{cases}
+		\end{equation}
+		
+	\subsubsection{\normf 观测值逐次更新}
+	
+	观测值逐次对预测状态进行更新时，首先计算残差：
 	\begin{equation}
 	\boldsymbol{V}_i(t_k)=\boldsymbol{Z}_i(t_k)-\boldsymbol{L}_i(t_k)
 	\end{equation}
@@ -302,7 +306,31 @@
 	\end{equation}
 	直至当前所有观测值更新完毕，进入下一时刻进行滤波。
 	
+	\subsubsection{\normf 观测值整体更新}
+	观测值整体对预测状态进行更新时，残差为：
+	\begin{equation}
+	\boldsymbol{V}(t_k)=\boldsymbol{Z}(t_k)-\boldsymbol{L}(t_k)
+	\end{equation}
+	卡尔曼增益为：
+	\begin{equation}
+	\boldsymbol{K}=\boldsymbol{D}_{\boldsymbol{X}}(t_{k},t_{k-1})\cdot\boldsymbol{H}^\top\left( \boldsymbol{H}\cdot\boldsymbol{D}_{\boldsymbol{X}}(t_k,t_{k-1})\cdot\boldsymbol{H}^\top+\boldsymbol{\Delta}_z\right) ^{-1}
+	\end{equation}
+	最终有：
+	\begin{equation}
+	\begin{cases}
+	\begin{aligned}
+	\boldsymbol{X}(t_k)&=\boldsymbol{X}(t_k,t_{k-1})+\boldsymbol{K}\cdot
+		\boldsymbol{V}(t_k)
+		\\
+	\boldsymbol{D}_{\boldsymbol{X}}(t_k)&=\left( \boldsymbol{I}-\boldsymbol{K}\cdot\boldsymbol{H}\right)\cdot\boldsymbol{D}_{\boldsymbol{X}}(t_k,t_{k-1}) 
+	\end{aligned}
+	\end{cases}
+	\end{equation}
 	\section{\normf{实验结果}}
+	\subsection{\normf 观测值逐次更新}
+	\subsubsection{\normf 先距离量测，后角度量测}
+	\subsubsection{\normf 先角度量测，后角度距离量测}
+	\subsection{\normf 观测值整体更新}
 	
 	\section{\normf{附录：关键代码片段}}
 	

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<cereal>
+    <config>
+        <data_path>/home/csl/Homework/optimal_estimation/prog/data/mes.txt</data_path>
+        <output_path>/home/csl/Homework/optimal_estimation/prog/data</output_path>
+        <mode>0</mode>
+        <kx>0.01</kx>
+        <ky>0.05</ky>
+        <gravity>9.8</gravity>
+        <sigma_ex>1.5</sigma_ex>
+        <sigma_ey>1.5</sigma_ey>
+        <init_state>
+            <timestamp>0.0</timestamp>
+            <state>
+                <r0c0>0.0</r0c0>
+                <r1c0>500.0</r1c0>
+                <r2c0>50.0</r2c0>
+                <r3c0>0.0</r3c0>
+            </state>
+            <var>
+                <r0c0>10000</r0c0>
+                <r0c1>0</r0c1>
+                <r0c2>0</r0c2>
+                <r0c3>0</r0c3>
+                <r1c0>0</r1c0>
+                <r1c1>10000</r1c1>
+                <r1c2>0</r1c2>
+                <r1c3>0</r1c3>
+                <r2c0>0</r2c0>
+                <r2c1>0</r2c1>
+                <r2c2>10000</r2c2>
+                <r2c3>0</r2c3>
+                <r3c0>0</r3c0>
+                <r3c1>0</r3c1>
+                <r3c2>0</r3c2>
+                <r3c3>10000</r3c3>
+            </var>
+        </init_state>
+    </config>
+</cereal>
+

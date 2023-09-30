@@ -37,4 +37,6 @@ namespace ns_kf {
     StateManager::StateManager(double timestamp, Eigen::Vector4d state, Eigen::Matrix4d var)
             : timestamp(timestamp), state(std::move(state)), var(std::move(var)) {}
 
+    StateManager::StateManager() : timestamp(0.0), state(Eigen::Vector4d::Zero()), var(Eigen::Matrix4d::Identity()) {}
+
 }

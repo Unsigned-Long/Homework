@@ -11,15 +11,22 @@
 namespace ns_kf {
     struct StateManager {
     public:
-        double timestamp;
+        double timestamp{};
 
         // px, py, vx, vy
         Eigen::Vector4d state;
-
+        /**
+         * pxpx pxpy pxvx pxvy
+         * pypx pypy pyvx pyvy
+         * vxpx vxpy vxvx vxvy
+         * vypx vypy vyvx vyvy
+         */
         Eigen::Matrix4d var;
 
     public:
         StateManager(double timestamp, Eigen::Vector4d state, Eigen::Matrix4d var);
+
+        StateManager();
 
         double &Px();
 
