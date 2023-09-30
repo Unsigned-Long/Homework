@@ -9,7 +9,7 @@
 #include "utils.hpp"
 
 namespace ns_kf {
-    struct StateManager {
+    struct State {
     public:
         double timestamp{};
 
@@ -24,9 +24,9 @@ namespace ns_kf {
         Eigen::Matrix4d var;
 
     public:
-        StateManager(double timestamp, Eigen::Vector4d state, Eigen::Matrix4d var);
+        State(double timestamp, Eigen::Vector4d state, Eigen::Matrix4d var);
 
-        StateManager();
+        State();
 
         double &Px();
 
@@ -44,7 +44,7 @@ namespace ns_kf {
 
         [[nodiscard]] const double &Vy() const;
 
-        friend std::ostream &operator<<(std::ostream &os, const StateManager &manager);
+        friend std::ostream &operator<<(std::ostream &os, const State &manager);
 
     public:
         // Serialization

@@ -10,7 +10,7 @@
 #include "utils.hpp"
 
 namespace ns_kf {
-    struct MesManager {
+    struct Measure {
     public:
         double timestamp;
         double range;
@@ -18,9 +18,9 @@ namespace ns_kf {
         double sigma_r, sigma_a;
 
     public:
-        MesManager(double timestamp, double range, double alpha, double sigmaR, double sigmaA);
+        Measure(double timestamp, double range, double alpha, double sigmaR, double sigmaA);
 
-        friend std::ostream &operator<<(std::ostream &os, const MesManager &manager);
+        friend std::ostream &operator<<(std::ostream &os, const Measure &manager);
 
         [[nodiscard]] Eigen::Vector2d MesVec() const;
 

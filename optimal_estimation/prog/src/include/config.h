@@ -27,7 +27,7 @@ namespace ns_kf {
         double kx{}, ky{};
         double gravity{};
         double sigma_ex{}, sigma_ey{};
-        StateManager init_state{};
+        State init_state{};
 
     public:
         Config();

@@ -19,7 +19,7 @@ namespace ns_kf {
         using Ptr = std::shared_ptr<KalmanFilter>;
 
     private:
-        StateManager estState, preState;
+        State estState, preState;
 
         const double kx, ky;
         const double gravity;
@@ -27,32 +27,34 @@ namespace ns_kf {
 
     public:
 
-        KalmanFilter(const StateManager &initState, double kx, double ky,
+        KalmanFilter(const State &initState, double kx, double ky,
                      double gravity, double sigmaEx, double sigmaEy);
 
-        static Ptr Create(const StateManager &initState, double kx, double ky,
+        static Ptr Create(const State &initState, double kx, double ky,
                           double gravity, double sigmaEx, double sigmaEy);
 
-        KalmanFilter &StateTransition(double t);
+        KalmanFilter &StatePredict(double t);
 
-        KalmanFilter &MesUpdateSequentially1(const MesManager &mes);
+        KalmanFilter &MesUpdateSequentially1(const Measure &mes);
 
-        KalmanFilter &MesUpdateSequentially2(const MesManager &mes);
+        KalmanFilter &MesUpdateSequentially2(const Measure &mes);
 
-        KalmanFilter &MesUpdateGlobal(const MesManager &mes);
+        KalmanFilter &MesUpdateGlobal(const Measure &mes);
 
-        const StateManager &GetEstState() const;
+        [[nodiscard]] const State &GetEstState() const;
+
+        const State &GetPreState() const;
 
     protected:
-        [[nodiscard]] Eigen::Matrix4d StateTransitionMat(const StateManager &curState, double dt) const;
+        [[nodiscard]] Eigen::Matrix4d StateTransitionMat(const State &curState, double dt) const;
 
-        [[nodiscard]] Eigen::Vector4d ControlInputVec(const StateManager &curState, double dt) const;
+        [[nodiscard]] Eigen::Vector4d ControlInputVec(const State &curState, double dt) const;
 
-        [[nodiscard]] Eigen::Matrix4d ErrorTransitionMat(const StateManager &curState, double dt) const;
+        [[nodiscard]] Eigen::Matrix4d ErrorTransitionMat(const State &curState, double dt) const;
 
-        static MesManager MesPrediction(const StateManager &curState);
+        static Measure MesPrediction(const State &curState);
 
-        static Eigen::Matrix<double, 2, 4> MeasurementMat(const StateManager &curState);
+        static Eigen::Matrix<double, 2, 4> MeasurementMat(const State &curState);
     };
 }
 #endif //PROG_KALMAN_FILTER_H

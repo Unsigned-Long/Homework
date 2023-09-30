@@ -9,7 +9,7 @@
 #include "filesystem"
 #include "cereal/types/vector.hpp"
 
-std::vector<ns_kf::MesManager> LoadMeasurements(const std::string &filename) {
+std::vector<ns_kf::Measure> LoadMeasurements(const std::string &filename) {
     return {};
 }
 
@@ -18,16 +18,21 @@ int main(int argc, char **argv) {
     prog.add_argument("config").help("the path of the configure file");
 
     try {
+        // load the config file
         prog.parse_args(argc, argv);
         auto c = ns_kf::Config::Load(prog.get<std::string>("config"));
         std::cout << c << std::endl;
         std::cin.get();
 
-        std::vector<ns_kf::StateManager> states;
+        // perform filter
+        std::vector<ns_kf::State> estStates, preStates;
         auto filter = ns_kf::KalmanFilter::Create(c.init_state, c.kx, c.ky, c.gravity, c.sigma_ex, c.sigma_ey);
 
         for (const auto &mes: LoadMeasurements(c.data_path)) {
-            filter->StateTransition(mes.timestamp);
+
+            filter->StatePredict(mes.timestamp);
+            preStates.push_back(filter->GetPreState());
+
             switch (c.mode) {
 
                 case ns_kf::SolveMode::GLOBAL_EKF: {
@@ -43,16 +48,20 @@ int main(int argc, char **argv) {
                 }
                     break;
             }
-            states.push_back(filter->GetEstState());
+            estStates.push_back(filter->GetEstState());
         }
 
+        // output results
         if (!std::filesystem::exists(c.output_path)) {
             std::filesystem::create_directories(c.output_path);
         }
         {
             std::ofstream file(c.output_path + "/results.xml");
             auto ar = cereal::XMLOutputArchive(file);
-            ar(states);
+            ar(
+                    cereal::make_nvp("est_states", estStates),
+                    cereal::make_nvp("pre_states", preStates)
+            );
         }
 
     } catch (const std::exception &err) {
