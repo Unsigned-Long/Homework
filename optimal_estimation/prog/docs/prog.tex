@@ -1,0 +1,311 @@
+\documentclass[12pt, onecolumn]{article}
+
+% 引入相关的包
+\usepackage{amsmath, listings, fontspec, geometry, graphicx, ctex, color, subfigure, amsfonts, amssymb}
+\usepackage{multirow}
+\usepackage[table,xcdraw]{xcolor}
+\usepackage[ruled]{algorithm2e}
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=red,
+	citecolor=red,
+}
+
+% 设定页面的尺寸和比例
+\geometry{left = 1.5cm, right = 1.5cm, top = 1.5cm, bottom = 1.5cm}
+
+% 设定两栏之间的间距
+\setlength\columnsep{1cm}
+
+% 设定字体，为代码的插入作准备
+\newfontfamily\ubuntu{Ubuntu Mono}
+\newfontfamily\consolas{Consolas}
+
+% 头部信息
+\title{\normf{编程：观测值逐次更新的扩展卡尔曼滤波器}}
+\author{\normf 姓名：陈烁龙\;\;\;学号：2023202140019\;\;\;学院：测绘学院}
+\date{\normf{\today}}
+
+% 代码块的风格设定
+\lstset{
+	language=C++,
+	basicstyle=\scriptsize\ubuntu,
+	keywordstyle=\textbf,
+	stringstyle=\itshape,
+	commentstyle=\itshape,
+	numberstyle=\scriptsize\ubuntu,
+	showstringspaces=false,
+	numbers=left,
+	numbersep=8pt,
+	tabsize=2,
+	frame=single,
+	framerule=1pt,
+	columns=fullflexible,
+	breaklines,
+	frame=shadowbox, 
+	backgroundcolor=\color[rgb]{0.97,0.97,0.97}
+}
+
+% 字体族的定义
+% \fangsong \songti \heiti \kaishu
+\newcommand\normf{\fangsong}
+\newcommand\boldf{\heiti}
+\newcommand\keywords[1]{\boldf{关键词：} \normf #1}
+
+\newcommand\liehat[1]{\left[ #1 \right]_\times}
+\newcommand\lievee[1]{\left[ #1 \right]^\vee}
+\newcommand\liehatvee[1]{\left[ #1 \right]^\vee_\times}
+
+\newcommand\mlcomment[1]{\iffalse #1 \fi}
+%\newcommand\mlcomment[1]{ #1 }
+
+\newcounter{problemname}
+\newenvironment{problem}{\stepcounter{problemname}\par\noindent\normf\textbf{\textcolor[rgb]{1,0,0}{题目\arabic{problemname}.} }}{\leavevmode\\\par}
+\newenvironment{solution}{\par\noindent\normf\textbf{解答: }}{\leavevmode\\\par}
+\newenvironment{note}{\par\noindent\normf\textbf{题目\arabic{problemname}的注记: }}{\leavevmode\\\par}
+
+
+\begin{document}
+	
+	% 插入头部信息
+		\maketitle
+		% 换页
+		\thispagestyle{empty}
+		\clearpage
+		
+		% 插入目录、图、表并换页
+		\pagenumbering{roman}
+		\tableofcontents
+		\newpage
+		\listoffigures
+		\newpage
+		\listoftables
+		% 罗马字母形式的页码
+		
+		\clearpage
+		% 从该页开始计数
+		\setcounter{page}{1}
+		% 阿拉伯数字形式的页码
+		\pagenumbering{arabic}
+	
+	\section{\normf{问题分析}}
+	\normf
+	\subsection{\normf 状态转移方程}
+	设$t$时刻的状态向量为$\boldsymbol{X}(t)=\left( x(t),y(t),v_x(t),v_y(t)\right) ^\top$，则根据题意，得到该系统的连续时间微分方差为
+	：
+	\begin{equation}
+	\dot{\boldsymbol{X}}(t)=\begin{pmatrix}
+	\dot{x}(t)\\\dot{y}(t)\\\dot{v}_x(t)\\\dot{v}_y(t)
+	\end{pmatrix}=\begin{pmatrix}
+	v_x(t)\\
+	v_y(t)\\
+	-k_x v^2_x(t)\\
+	k_y v^2_y(t)
+	\end{pmatrix}+\begin{pmatrix}
+	0\\0\\0\\-1
+	\end{pmatrix}\begin{pmatrix}
+	g
+	\end{pmatrix}+\begin{pmatrix}
+	0&0\\
+	0&0\\
+	1&0\\
+	0&1
+	\end{pmatrix}\begin{pmatrix}
+	e_x(t)\\
+	e_y(t)
+	\end{pmatrix}
+	\end{equation}
+	将其记为：
+	\begin{equation}
+	\dot{\boldsymbol{X}}(t)=\boldsymbol{F}(t)+\boldsymbol{B}\cdot\boldsymbol{u}+\boldsymbol{C}\cdot\boldsymbol{e}(t)
+	\end{equation}
+	线性化得到：
+	\begin{equation}
+	\dot{\boldsymbol{X}}(t)=\boldsymbol{F^*}+\boldsymbol{A}\cdot\left( \boldsymbol{X}(t)-\boldsymbol{X^*}\right) +\boldsymbol{B}\cdot\boldsymbol{u}+\boldsymbol{C}\cdot\boldsymbol{e(t)}
+	\end{equation}
+	其中：
+	\begin{equation}
+	\boldsymbol{F^*}=\begin{pmatrix}
+		v_x^*\\
+		v_y^*\\
+		-k_x {v^*_x}^2\\
+		k_y {v^*_y}^2
+		\end{pmatrix}
+	\qquad
+	\boldsymbol{A}=\begin{pmatrix}
+		0&0&1&0\\
+		0&0&0&1\\
+		0&0&-2 k_x v_x^*&0\\
+		0&0&0&2 k_y v_y^*
+		\end{pmatrix}
+		\qquad
+		\boldsymbol{X^*}=\begin{pmatrix}
+			x^*\\y^*\\v_x^*\\v_y^*
+			\end{pmatrix}
+	\end{equation}
+	进一步化简得到：
+	\begin{equation}
+	\begin{aligned}
+	\dot{\boldsymbol{X}}(t)&=\boldsymbol{A}\cdot\boldsymbol{X}(t)
+		+\left( \boldsymbol{F^*}-\boldsymbol{A}\cdot\boldsymbol{X^*}+\boldsymbol{B}\cdot\boldsymbol{u}\right) 
+		+\boldsymbol{C}\cdot\boldsymbol{e}(t)
+		\\
+		&=\boldsymbol{A}\cdot\boldsymbol{X}(t)
+				+\boldsymbol{G}
+				+\boldsymbol{C}\cdot\boldsymbol{e}(t)
+	\end{aligned}
+	\end{equation}
+	对其进行离散化。由于$\boldsymbol{A}$矩阵与时间无关，所以状态转移矩阵为：
+	\begin{equation}
+	\boldsymbol{\Phi}(t,\tau)=\boldsymbol{I}+\boldsymbol{A}\cdot(t-\tau)=
+	\begin{pmatrix}
+	1&0&(t-\tau)&0\\
+	0&1&0&(t-\tau)\\
+	0&0&1-2 k_x v_x^*\times(t-\tau)&0\\
+	0&0&0&1+2 k_y v_y^*\times(t-\tau)\\
+	\end{pmatrix}
+	\end{equation}
+	最终，得到离散化后的状态转移方程：
+	\begin{equation}
+	\begin{aligned}
+	\boldsymbol{X}(t_k)&=\boldsymbol{\Phi}(t_k,t_{k-1})\cdot\boldsymbol{X}(t_{k-1})+\int_{t_{k-1}}^{t_k}\boldsymbol{\Phi}(t_k,\tau)\cdot\boldsymbol{G}\cdot d\tau
+		+\int_{t_{k-1}}^{t_k}\boldsymbol{\Phi}(t_k,\tau)\cdot\boldsymbol{C}\cdot\boldsymbol{e}(\tau)\cdot d\tau
+		\\&=\boldsymbol{\Phi}(t_k,t_{k-1})\cdot\boldsymbol{X}(t_{k-1})
+		+\boldsymbol{c}(t_k,t_{k-1})
+		+\boldsymbol{w}(t_{k-1})
+	\end{aligned}
+	\end{equation}
+	令$\Delta t=t_k-t_{k-1}$，则其中：
+	\begin{equation}
+	\boldsymbol{c}(t_k,t_{k-1})=	\begin{pmatrix}
+		\Delta t&0&(\Delta t)^2/2&0\\
+		0&\Delta t&0&(\Delta t)^2/2\\
+		0&0&\Delta t-k_x v_x^*\times(\Delta t)^2&0\\
+		0&0&0&\Delta t+k_y v_y^*\times(\Delta t)^2\\
+		\end{pmatrix}\begin{pmatrix}
+		0\\0\\
+		k_x{v_x^*}^2\\
+		-k_y{v_y^*}^2-g
+		\end{pmatrix}
+	\end{equation}
+	$\boldsymbol{w}(k-1)$的方差$\boldsymbol{D}_{w}(k-1)=\int_{t_{k-1}}^{t_k}\boldsymbol{\Phi}(t_k,\tau)\cdot\boldsymbol{C}\cdot\boldsymbol{D}_{e}(\tau)\cdot\boldsymbol{C}^\top\cdot\boldsymbol{\Phi}^\top(t_k,\tau)\cdot d\tau$为：
+	\begin{equation}
+	\begin{pmatrix}
+	\frac{(\Delta t)^3}{3}\sigma_{e_x}^2
+	&0&
+	\left( \frac{1}{2}(\Delta t)^2-\frac{2}{3}k_xv_x^*(\Delta t)^3\right)\sigma_{e_x}^2 
+	&0\\
+	0&
+	\frac{(\Delta t)^3}{3}\sigma_{e_y}^2
+	&0&
+	\left( \frac{1}{2}(\Delta t)^2+\frac{2}{3}k_yv_y^*(\Delta t)^3\right)\sigma_{e_y}^2 
+	\\
+	\cdots&\cdots&
+	\left(\Delta t-2k_xv_x^*(\Delta t)^2+\frac{4}{3}(k_xv^*_x)^2(\Delta t)^3 \right) \sigma_{e_x}^2
+	&0
+	\\
+	\cdots&\cdots&\cdots&
+	\left(\Delta t+2k_yv_y^*(\Delta t)^2+\frac{4}{3}(k_yv^*_y)^2(\Delta t)^3 \right) \sigma_{e_y}^2
+	\end{pmatrix}
+	\end{equation}
+	\subsection{\normf 测量更新方程}
+	令$\boldsymbol{Z}(t_k)=\left( r(t_k),\alpha(t_k)\right) ^\top$，则有：
+	\begin{equation}
+	\boldsymbol{Z}(t_k)=\begin{pmatrix}
+	r(t_k)\\\alpha(t_k)
+	\end{pmatrix}=\begin{pmatrix}
+	\sqrt{x^2(t_k)+y^2(t_k)}\\
+	\arctan\begin{aligned}
+	\frac{x(t_k)}{y(t_k)}
+	\end{aligned}
+	\end{pmatrix}+
+	\begin{pmatrix}
+	\Delta_r(t_k)\\\Delta_\alpha(t_k)
+	\end{pmatrix}
+	\end{equation}
+	将其记为：
+	\begin{equation}
+	\boldsymbol{Z}(t_k)=\boldsymbol{L}(t_k)+\boldsymbol{\Delta}_z
+	\end{equation}
+	线性化后得到：
+	\begin{equation}
+	\boldsymbol{Z}(t_k)=\boldsymbol{L^*}+\boldsymbol{H}\cdot\left(
+	\boldsymbol{X}(t_k)-\boldsymbol{X^*}
+	\right) +\boldsymbol{\Delta}_z
+	\end{equation}
+	其中：
+	\begin{equation}
+	\boldsymbol{L^*}=\begin{pmatrix}
+		\sqrt{(x^*)^2+(y^*)^2}\\
+		\arctan\begin{aligned}
+		\frac{x^*}{y^*}
+		\end{aligned}
+		\end{pmatrix}
+		\qquad
+		\boldsymbol{H}=\begin{pmatrix}
+			\begin{aligned}
+			\frac{x^*}{\sqrt{(x^*)^2+(y^*)^2}}
+			\end{aligned}
+		&
+			\begin{aligned}
+			\frac{y^*}{\sqrt{(x^*)^2+(y^*)^2}}
+			\end{aligned}
+		&0&0\\
+		\begin{aligned}
+		\frac{1}{1+(x^*/y^*)^2}\times\frac{1}{y^*}
+		\end{aligned}
+		&
+		\begin{aligned}
+		\frac{1}{1+(x^*/y^*)^2}\times-\frac{x^*}{(y^*)^2}
+		\end{aligned}
+		&0&0
+		\end{pmatrix}
+	\end{equation}
+	整理得到：
+	\begin{equation}
+	\boldsymbol{Z}(t_k)-\boldsymbol{L^*}+\boldsymbol{H}\cdot\boldsymbol{X^*}
+	=\boldsymbol{H}\cdot\boldsymbol{X}(t_k)	+\boldsymbol{\Delta}_z
+	\end{equation}
+	
+	\subsection{\normf 观测值逐次更新的扩展卡尔曼滤波}
+	已知$t_{k-1}$时刻的状态$\boldsymbol{X}(t_{k-1})$及其方差$\boldsymbol{D}_{\boldsymbol{X}}(t_{k-1})$，首先通过状态转移方程进行状态预测和方差传播：
+	\begin{equation}
+	\begin{cases}
+	\begin{aligned}
+	\boldsymbol{X}(t_k,t_{k-1})&=
+		\boldsymbol{\Phi}(t_k,t_{k-1})\cdot\boldsymbol{X}(t_{k-1})
+		+\boldsymbol{c}(t_k,t_{k-1})
+		\\
+		\boldsymbol{D}_{\boldsymbol{X}}(t_k,t_{k-1})&=\boldsymbol{\Phi}(t_k,t_{k-1})\cdot\boldsymbol{D}_{\boldsymbol{X}}(t_k)\cdot\boldsymbol{\Phi}^\top(t_k,t_{k-1})+\boldsymbol{D}_{w}(t_{k-1})
+	\end{aligned}
+	\end{cases}
+	\end{equation}
+	而后基于量测值进行逐次的测量更新。首先计算残差：
+	\begin{equation}
+	\boldsymbol{V}_i(t_k)=\boldsymbol{Z}_i(t_k)-\boldsymbol{L}_i(t_k)
+	\end{equation}
+	需要注意的是，下一次的残差计算需要使用上一次的估计结果。而后计算卡尔曼增益：
+	\begin{equation}
+	\boldsymbol{K}_i=\boldsymbol{D}_{\boldsymbol{X}}(t_{k},t_{k-1})\cdot\boldsymbol{h}_i^\top\left( \boldsymbol{h}_i\cdot\boldsymbol{D}_{\boldsymbol{X}}(t_k,t_{k-1})\cdot\boldsymbol{h}_i^\top+\boldsymbol{\Delta}_z^i\right) ^{-1}
+	\end{equation}
+	需要注意的是，下一次的卡尔曼增益矩阵的计算需要使用上一次的状态方差。最后计算状态更新后的值：
+	\begin{equation}
+	\begin{cases}
+	\begin{aligned}
+	\boldsymbol{X}(t_k)&=\boldsymbol{X}(t_k,t_{k-1})+\boldsymbol{K}_i\cdot
+		\boldsymbol{V}_i(t_k)
+		\\
+	\boldsymbol{D}_{\boldsymbol{X}}(t_k)&=\left( \boldsymbol{I}-\boldsymbol{K}_i\cdot\boldsymbol{h}_i\right)\cdot\boldsymbol{D}_{\boldsymbol{X}}(t_k,t_{k-1}) 
+	\end{aligned}
+	\end{cases}
+	\end{equation}
+	直至当前所有观测值更新完毕，进入下一时刻进行滤波。
+	
+	\section{\normf{实验结果}}
+	
+	\section{\normf{附录：关键代码片段}}
+	
+	
+\end{document}
+
