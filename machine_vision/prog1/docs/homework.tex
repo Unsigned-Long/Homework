@@ -6,6 +6,10 @@
 \usepackage[table,xcdraw]{xcolor}
 \usepackage[ruled]{algorithm2e}
 \usepackage[hidelinks]{hyperref}
+\usepackage{graphicx}
+
+\usepackage{picins}
+\usepackage[most]{tcolorbox}
 \hypersetup{
 	colorlinks=true,
 	linkcolor=red,
@@ -70,7 +74,26 @@
 \begin{document}
 	
 	% 插入头部信息
-		\maketitle
+		\begin{titlepage}
+			    \centering
+			    \includegraphics[width=0.4\textwidth]{whu_red.png}\par\vspace{1cm}
+			    \vspace{4cm}
+			    {\huge\kaishu “机器视觉”编程作业\par 直线和角点提取 \par}
+			    \vspace{3cm}
+			    {\Large\kaishu 
+			    \begin{center}\begin{tabular}{l}
+			    姓名：陈烁龙\\
+			    学号：\bfseries 2023202140019\\
+			    学院：测绘学院
+			    \end{tabular}\end{center}
+			     \par}
+			    
+			
+			    \vfill
+			
+			% Bottom of the page
+			    {\large\kaishu\bfseries \today\par}
+			\end{titlepage}
 		% 换页
 		\thispagestyle{empty}
 		\clearpage
@@ -308,7 +331,7 @@
 			\caption{\normf SURF角点提取结果}
 			\label{fig:SURF角点提取结果}
 			\end{figure}
-				
+	
 	\section{\normf{直线提取}}
 	\normf
 	
@@ -344,6 +367,7 @@
 		\caption{\normf LSD直线提取结果}
 		\label{fig:LSD直线提取结果}
 		\end{figure}
+	
 	
 	\section{\normf{附录：运行环境及主要代码片段}}
 	本次的直线和点提取编程是基于C++版本的OpenCV实现的。需要注意的是，在最新版本的OpenCV中，SIFT算法已经直接包含，而SURF则需要用到OpenCV的附属贡献库(OpenCV Contrib)。表\ref{tab:运行环境}展示了本次编程的运行环境。
@@ -545,5 +569,18 @@
 	    }
 	    mats.insert({"marked_image", markedImg});
 	\end{lstlisting}
+	
+		\newpage
+		\section{ACKNOWLEDGMENT}
+		\begin{tcolorbox}[colback=white,colframe=white!70!black,title={\bfseries Author Information}]
+		\par\noindent
+			\parbox[t]{\linewidth}{
+		 \noindent\parpic{\includegraphics[height=2in,width=1in,clip,keepaspectratio]{ShuolongChen_grey.jpg}}
+		 \noindent{\bfseries Shuolong Chen}\emph{
+		 received the B.S. degree in geodesy and geomatics engineering from Wuhan University, Wuhan China, in 2023.
+		 He is currently a master candidate at the school of Geodesy and Geomatics, Wuhan University. His area of research currently focuses on integrated navigation systems and multi-sensor fusion.
+		 Contact him via e-mail: shlchen@whu.edu.cn.
+		 }}
+		\end{tcolorbox}
 \end{document}
 

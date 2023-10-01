@@ -125,7 +125,6 @@ namespace ns_kf {
         }
         estState = preState;
         return *this;
-        return *this;
     }
 
 
