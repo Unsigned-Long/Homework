@@ -64,22 +64,24 @@ namespace ns_kf {
 
         // timestamp
         preState.timestamp = t;
+
+        recorder.preStates.push_back(preState);
         return *this;
     }
 
     Measure KalmanFilter::MesPrediction(const State &curState) {
-        double range = std::sqrt(curState.Px() * curState.Py() + curState.Py() * curState.Py());
+        double range = std::sqrt(curState.Px() * curState.Px() + curState.Py() * curState.Py());
         double alpha = std::atan(curState.Px() / curState.Py());
         return {curState.timestamp, range, alpha, 0.0, 0.0};
     }
 
     Eigen::Matrix<double, 2, 4> KalmanFilter::MeasurementMat(const State &curState) {
         Eigen::Matrix<double, 2, 4> m = Eigen::Matrix<double, 2, 4>::Zero();
-        m(0, 0) = curState.Px() / std::sqrt(curState.Px() * curState.Py() + curState.Py() * curState.Py());
-        m(0, 1) = curState.Py() / std::sqrt(curState.Px() * curState.Py() + curState.Py() * curState.Py());
-        m(1, 0) = 1.0 / (1.0 + std::pow(curState.Px() / curState.Py(), 2.0)) / curState.Py();
-        m(1, 1) = 1.0 / (1.0 + std::pow(curState.Px() / curState.Py(), 2.0)) * (-curState.Px()) /
-                  (curState.Py() * curState.Py());
+        double r = std::sqrt(curState.Px() * curState.Px() + curState.Py() * curState.Py());
+        m(0, 0) = curState.Px() / r;
+        m(0, 1) = curState.Py() / r;
+        m(1, 0) = 1.0 / (curState.Py() + curState.Px() * curState.Px() / curState.Py());
+        m(1, 1) = -curState.Px() / (r * r);
         return m;
     }
 
@@ -90,6 +92,7 @@ namespace ns_kf {
             Eigen::Matrix<double, 1, 4> h1 = MeasurementMat(preState).row(0);
             Eigen::Vector4d k1 = preState.var * h1.transpose()
                                  / ((h1 * preState.var * h1.transpose())(0, 0) + mes.sigma_r * mes.sigma_r);
+
             preState.state = preState.state + k1 * v1;
             preState.var = (Eigen::Matrix4d::Identity() - k1 * h1) * preState.var;
         }
@@ -99,10 +102,18 @@ namespace ns_kf {
             Eigen::Matrix<double, 1, 4> h2 = MeasurementMat(preState).row(1);
             Eigen::Vector4d k2 = preState.var * h2.transpose()
                                  / ((h2 * preState.var * h2.transpose())(0, 0) + mes.sigma_a * mes.sigma_a);
+
+            recorder.kxVec.emplace_back(mes.timestamp, (k2 * v2)(0, 0));
+            recorder.kyVec.emplace_back(mes.timestamp, (k2 * v2)(1, 0));
+            recorder.kvxVec.emplace_back(mes.timestamp, (k2 * v2)(2, 0));
+            recorder.kvyVec.emplace_back(mes.timestamp, (k2 * v2)(3, 0));
+
             preState.state = preState.state + k2 * v2;
             preState.var = (Eigen::Matrix4d::Identity() - k2 * h2) * preState.var;
         }
         estState = preState;
+
+        recorder.estStates.push_back(estState);
         return *this;
     }
 
@@ -114,6 +125,7 @@ namespace ns_kf {
             Eigen::Matrix<double, 1, 4> h2 = MeasurementMat(preState).row(1);
             Eigen::Vector4d k2 = preState.var * h2.transpose()
                                  / ((h2 * preState.var * h2.transpose())(0, 0) + mes.sigma_a * mes.sigma_a);
+
             preState.state = preState.state + k2 * v2;
             preState.var = (Eigen::Matrix4d::Identity() - k2 * h2) * preState.var;
             preState.timestamp = mes.timestamp;
@@ -124,11 +136,19 @@ namespace ns_kf {
             Eigen::Matrix<double, 1, 4> h1 = MeasurementMat(preState).row(0);
             Eigen::Vector4d k1 = preState.var * h1.transpose()
                                  / ((h1 * preState.var * h1.transpose())(0, 0) + mes.sigma_r * mes.sigma_r);
+
+            recorder.kxVec.emplace_back(mes.timestamp, (k1 * v1)(0, 0));
+            recorder.kyVec.emplace_back(mes.timestamp, (k1 * v1)(1, 0));
+            recorder.kvxVec.emplace_back(mes.timestamp, (k1 * v1)(2, 0));
+            recorder.kvyVec.emplace_back(mes.timestamp, (k1 * v1)(3, 0));
+
             preState.state = preState.state + k1 * v1;
             preState.var = (Eigen::Matrix4d::Identity() - k1 * h1) * preState.var;
             preState.timestamp = mes.timestamp;
         }
         estState = preState;
+
+        recorder.estStates.push_back(estState);
         return *this;
     }
 
@@ -138,9 +158,17 @@ namespace ns_kf {
         Eigen::Matrix<double, 2, 4> h = MeasurementMat(preState);
         Eigen::Matrix<double, 4, 2> k = preState.var * h.transpose() *
                                         (h * preState.var * h.transpose() + mes.VarMat()).inverse();
+
+        recorder.kxVec.emplace_back(mes.timestamp, (k * v)(0, 0));
+        recorder.kyVec.emplace_back(mes.timestamp, (k * v)(1, 0));
+        recorder.kvxVec.emplace_back(mes.timestamp, (k * v)(2, 0));
+        recorder.kvyVec.emplace_back(mes.timestamp, (k * v)(3, 0));
+
         estState.state = preState.state + k * v;
         estState.var = (Eigen::Matrix4d::Identity() - k * h) * preState.var;
         estState.timestamp = mes.timestamp;
+
+        recorder.estStates.push_back(estState);
         return *this;
     }
 
@@ -162,5 +190,9 @@ namespace ns_kf {
 
     const State &KalmanFilter::GetPreState() const {
         return preState;
+    }
+
+    const StateRecorder &KalmanFilter::GetRecorder() const {
+        return recorder;
     }
 }

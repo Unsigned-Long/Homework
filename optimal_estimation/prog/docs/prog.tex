@@ -114,12 +114,13 @@
 	\section{\normf{实习题目}}
 	
 	\normf
-	\subsection{\normf{问题描述}}
+	\subsection{\normf{问题分析}}
 	由题意知，该问题为一个二维(水平方向和垂直方向)的状态估计问题。具体来说，该系统中：
 	\begin{enumerate}
 	\item 待估计的状态有：二维的位置状态和二维的速度状态；
 	\item 输入：自身所受到重力；
 	\item 干扰：不确定的零均值白噪声干扰力；
+	\item 观测：距离和角度观测
 	\end{enumerate}
 	
 	基于此，可以得到该连续型系统的数学模型。需要注意的是，由于该数学模型是非线性的，所以需要先进行线性化操作，而后才能进行离散化，最终得到状态转移方程。
@@ -128,7 +129,7 @@
 	
 	在观测更新处理方面，可以有两种选择：$(i)$基于所有的观测值对预测状态进行整体更新，或者$(ii)$ 对观测向量中的每一维观测值进行逐次更新状态。二者对应于$(i)$ 扩展卡尔曼滤波，和$(ii)$观测值逐次更新的扩展卡尔曼滤波。
 	
-	\section{\normf{分析和解题}}
+	\section{\normf{滤波模型}}
 	
 	\subsection{\normf 状态方程和观测方程}
 	设$t$时刻的状态向量为$\boldsymbol{X}(t)=\left( x(t),y(t),v_x(t),v_y(t)\right) ^\top$，则根据题意，得到该系统的连续时间微分方差为
@@ -370,13 +371,59 @@
 	\section{\normf{实验结果}}
 	\subsection{\normf 观测值逐次更新}
 	\subsubsection{\normf 先距离量测，后角度量测}
-	\subsubsection{\normf 先角度量测，后距离量测}
-	\subsection{\normf 观测值整体更新}
+
+	观测值逐次更新的扩展卡尔曼滤波结果(先距离后角度)如图\ref{fig:local_kf_1}所示。图中绘制了：滤波结果轨迹(左图)、四个状态量的方差收敛情况(中图)、观测值对预测状态的增益(右图)。
 	
+	由左图可见，由于观测噪声的影响，根据观测值直接恢复的轨迹具有跳跃性(不平滑)。通过卡尔曼滤波的状态预测和量测更新，很好地对噪声进行抑制和状态估计，得到了较为平滑的轨迹。
+	
+	由中图可见，四个状态在6秒钟的时候收敛，方差(标准差)趋于稳定。其中水平位移的方差收敛到$2.78\;m^2$，垂直位移的方差收敛到$2.96\;m^2$，水平速度的方差收敛到$2.34\;(m/s)^2$，垂直速度的方差收敛到$0.79\;(m/s)^2$。
+	
+	由右图可见，观测值对预测状态的作用呈现减小的趋势。随着时间的增加，对预测状态的校准量的绝对值变小，也即估计的状态更偏向于预测值。
+	
+			\begin{figure}[h]
+				\centering
+				\includegraphics[width=\linewidth]{../img/local_kf_1.pdf}
+				\caption{\normf 观测值逐次更新的扩展卡尔曼滤波结果(先距离后角度)：滤波结果轨迹(左图)、四个状态量的方差收敛情况(中图)、观测值对预测状态的增益(右图)}
+				\label{fig:local_kf_1}
+			\end{figure}
+		
+	\subsubsection{\normf 先角度量测，后距离量测}
+		
+		观测值逐次更新的扩展卡尔曼滤波结果(先角度后距离)如图\ref{fig:local_kf_2}所示。图中绘制了：滤波结果轨迹(左图)、四个状态量的方差收敛情况(中图)、观测值对预测状态的增益(右图)。
+			
+		由左图可见，通过“观测值逐次更新的扩展卡尔曼滤波结果(先角度后距离)”得到的轨迹与“观测值逐次更新的扩展卡尔曼滤波结果(先距离后角度)”得到的轨迹差别不是很大。
+		
+		由中图可见，四个状态在6秒钟的时候收敛，方差(标准差)趋于稳定。其中水平位移的方差收敛到$2.78\;m^2$，垂直位移的方差收敛到$2.96\;m^2$，水平速度的方差收敛到$2.34\;(m/s)^2$，垂直速度的方差收敛到$0.79\;(m/s)^2$。“观测值逐次更新的扩展卡尔曼滤波结果(先角度后距离)”的收敛速度与“观测值逐次更新的扩展卡尔曼滤波结果(先距离后角度)”得到的收敛速度不是很大。
+		
+		由右图可见，观测值对预测的垂直方向位置和速度的作用呈现减小的趋势，但是对预测的水平方向位置和速度的作用无减小趋势。这里可以看到“观测值逐次更新的扩展卡尔曼滤波结果(先角度后距离)”与“观测值逐次更新的扩展卡尔曼滤波结果(先距离后角度)”的差别。
+		
+				\begin{figure}[h]
+					\centering
+					\includegraphics[width=\linewidth]{../img/local_kf_2.pdf}
+					\caption{\normf 观测值逐次更新的扩展卡尔曼滤波结果(先角度后距离)：滤波结果轨迹(左图)、四个状态量的方差收敛情况(中图)、观测值对预测状态的增益(右图)}
+					\label{fig:local_kf_2}
+				\end{figure}
+		
+	\subsection{\normf 观测值整体更新}
+
+	
+		观测值整体更新的扩展卡尔曼滤波结果如图\ref{fig:local_kf_2}所示。图中绘制了：滤波结果轨迹(左图)、四个状态量的方差收敛情况(中图)、观测值对预测状态的增益(右图)。
+			
+		由左图可见，通过“观测值整体更新的扩展卡尔曼滤波”得到的轨迹与“观测值逐次更新的扩展卡尔曼滤波结果”得到的轨迹差别不是很大。
+		
+		由中图可见，四个状态在6秒钟的时候收敛，方差(标准差)趋于稳定。其中水平位移的方差收敛到$2.78\;m^2$，垂直位移的方差收敛到$2.96\;m^2$，水平速度的方差收敛到$2.34\;(m/s)^2$，垂直速度的方差收敛到$0.79\;(m/s)^2$。“观测值整体更新的扩展卡尔曼滤波”的收敛速度与“观测值逐次更新的扩展卡尔曼滤波结果”得到的收敛速度不是很大。
+		
+		由右图可见，观测值对预测状态的作用呈现减小的趋势，且该趋势相较于“观测值逐次更新的扩展卡尔曼滤波结果”中的趋势更加明显。这里可以看到“观测值整体更新的扩展卡尔曼滤波结果”与“观测值逐次更新的扩展卡尔曼滤波结果”的差别。
+			\begin{figure}[h]
+				\centering
+				\includegraphics[width=\linewidth]{../img/global_kf.pdf}
+				\caption{\normf 观测值整体更新的扩展卡尔曼滤波结果：滤波结果轨迹(左图)、四个状态量的方差收敛情况(中图)、观测值对预测状态的增益(右图)}
+				\label{fig:global_kf}
+			\end{figure}
 	\newpage
 	\section{\normf{附录}}
 	\subsection{\normf 运行环境}
-	表格\ref{tab:代码运行环境}显示了本次编程测试的运行环境。本次代码使用\emph{CPP 17}实现，使用到了线性代数库\emph{Eigen}和数据序列化库\emph{Cereal}。代码虽然在\emph{Ubuntu}上实现， 但由于是\emph{Cmake}架构的项目，所以具有跨平台的特征，即可以在\emph{Windows}平台和\emph{Mac}上编译运行。
+	表\ref{tab:代码运行环境}显示了本次编程测试的运行环境。本次代码使用\emph{CPP 17}实现，使用到了线性代数库\emph{Eigen}和数据序列化库\emph{Cereal}。代码虽然在\emph{Ubuntu}上实现， 但由于是\emph{Cmake}架构的项目，所以具有跨平台的特征，即可以在\emph{Windows}平台和\emph{Mac}上编译运行。
 	
 	% Please add the following required packages to your document preamble:
 	% \usepackage{multirow}
@@ -398,79 +445,113 @@
 	\subsection{\normf 关键代码}
 	由于空间有限，所以在本文档中只贴了关键代码片段，也即$(i)$ 状态预测，$(ii)$ 全局量测更新，$(iii)$ 逐次量测更新(先距离后角度)，$(iv)$ 逐次量测更新(先角度后距离)。其他代码，诸如“状态”数据结构、“观测值”数据结构、“滤波器”类结构体等，在此文档中不在给出，具体细节可参考项目里面的代码文件。
 	\begin{lstlisting}[caption={\normf “状态预测”算法实现}]
-	    KalmanFilter &KalmanFilter::StatePredict(double t) {
-	        // state transition
-	        Eigen::Matrix4d phiMat = StateTransitionMat(estState, t - estState.timestamp);
-	        Eigen::Vector4d conVec = ControlInputVec(estState, t - estState.timestamp);
-	        preState.state = phiMat * estState.state + conVec;
-	
-	        // variance propagation
-	        Eigen::Matrix4d errorMat = ErrorTransitionMat(estState, t - estState.timestamp);
-	        preState.var = phiMat * estState.var * phiMat.transpose() + errorMat;
-	        return *this;
-	    }
+    KalmanFilter &KalmanFilter::StatePredict(double t) {
+        // state transition
+        Eigen::Matrix4d phiMat = StateTransitionMat(estState, t - estState.timestamp);
+        Eigen::Vector4d conVec = ControlInputVec(estState, t - estState.timestamp);
+        preState.state = phiMat * estState.state + conVec;
+
+        // variance propagation
+        Eigen::Matrix4d errorMat = ErrorTransitionMat(estState, t - estState.timestamp);
+        preState.var = phiMat * estState.var * phiMat.transpose() + errorMat;
+
+        // timestamp
+        preState.timestamp = t;
+
+        recorder.preStates.push_back(preState);
+        return *this;
+    }
 	\end{lstlisting}
 		
 	\begin{lstlisting}[caption={\normf “全局量测更新”算法实现}]
-	    KalmanFilter &KalmanFilter::MesUpdateGlobal(const Measure &mes) {
-	        Eigen::Vector2d v = mes.MesVec() - MesPrediction(preState).MesVec();
-	        Eigen::Matrix<double, 2, 4> h = MeasurementMat(preState);
-	        Eigen::Matrix<double, 4, 2> k = preState.var * h.transpose() *
-	                                        (h * preState.var * h.transpose() + mes.VarMat()).inverse();
-	        estState.state = preState.state + k * v;
-	        estState.var = (Eigen::Matrix4d::Identity() - k * h) * preState.var;
-	        return *this;
-	    }
+    KalmanFilter &KalmanFilter::MesUpdateGlobal(const Measure &mes) {
+        Eigen::Vector2d v = mes.MesVec() - MesPrediction(preState).MesVec();
+        Eigen::Matrix<double, 2, 4> h = MeasurementMat(preState);
+        Eigen::Matrix<double, 4, 2> k = preState.var * h.transpose() *
+                                        (h * preState.var * h.transpose() + mes.VarMat()).inverse();
+
+        recorder.kxVec.emplace_back(mes.timestamp, (k * v)(0, 0));
+        recorder.kyVec.emplace_back(mes.timestamp, (k * v)(1, 0));
+        recorder.kvxVec.emplace_back(mes.timestamp, (k * v)(2, 0));
+        recorder.kvyVec.emplace_back(mes.timestamp, (k * v)(3, 0));
+
+        estState.state = preState.state + k * v;
+        estState.var = (Eigen::Matrix4d::Identity() - k * h) * preState.var;
+        estState.timestamp = mes.timestamp;
+
+        recorder.estStates.push_back(estState);
+        return *this;
+    }
 	\end{lstlisting}
 		
 	\begin{lstlisting}[caption={\normf “逐次量测更新(先距离后角度)”算法实现}]
-	    KalmanFilter &KalmanFilter::MesUpdateSequentially1(const Measure &mes) {
-	        // update based on range measurement
-	        {
-	            double v1 = mes.range - MesPrediction(preState).range;
-	            Eigen::Matrix<double, 1, 4> h1 = MeasurementMat(preState).row(0);
-	            Eigen::Vector4d k1 = preState.var * h1.transpose()
-	                                 / ((h1 * preState.var * h1.transpose())(0, 0) + mes.sigma_r * mes.sigma_r);
-	            preState.state = preState.state + k1 * v1;
-	            preState.var = (Eigen::Matrix4d::Identity() - k1 * h1) * preState.var;
-	        }
-	        // update based on alpha measurement
-	        {
-	            double v2 = mes.alpha - MesPrediction(preState).alpha;
-	            Eigen::Matrix<double, 1, 4> h2 = MeasurementMat(preState).row(1);
-	            Eigen::Vector4d k2 = preState.var * h2.transpose()
-	                                 / ((h2 * preState.var * h2.transpose())(0, 0) + mes.sigma_a * mes.sigma_a);
-	            preState.state = preState.state + k2 * v2;
-	            preState.var = (Eigen::Matrix4d::Identity() - k2 * h2) * preState.var;
-	        }
-	        estState = preState;
-	        return *this;
-	    }
+    KalmanFilter &KalmanFilter::MesUpdateSequentially1(const Measure &mes) {
+        // update based on range measurement
+        {
+            double v1 = mes.range - MesPrediction(preState).range;
+            Eigen::Matrix<double, 1, 4> h1 = MeasurementMat(preState).row(0);
+            Eigen::Vector4d k1 = preState.var * h1.transpose()
+                                 / ((h1 * preState.var * h1.transpose())(0, 0) + mes.sigma_r * mes.sigma_r);
+
+            preState.state = preState.state + k1 * v1;
+            preState.var = (Eigen::Matrix4d::Identity() - k1 * h1) * preState.var;
+        }
+        // update based on alpha measurement
+        {
+            double v2 = mes.alpha - MesPrediction(preState).alpha;
+            Eigen::Matrix<double, 1, 4> h2 = MeasurementMat(preState).row(1);
+            Eigen::Vector4d k2 = preState.var * h2.transpose()
+                                 / ((h2 * preState.var * h2.transpose())(0, 0) + mes.sigma_a * mes.sigma_a);
+
+            recorder.kxVec.emplace_back(mes.timestamp, (k2 * v2)(0, 0));
+            recorder.kyVec.emplace_back(mes.timestamp, (k2 * v2)(1, 0));
+            recorder.kvxVec.emplace_back(mes.timestamp, (k2 * v2)(2, 0));
+            recorder.kvyVec.emplace_back(mes.timestamp, (k2 * v2)(3, 0));
+
+            preState.state = preState.state + k2 * v2;
+            preState.var = (Eigen::Matrix4d::Identity() - k2 * h2) * preState.var;
+        }
+        estState = preState;
+
+        recorder.estStates.push_back(estState);
+        return *this;
+    }
 	\end{lstlisting}
 	
 	\begin{lstlisting}[caption={\normf “逐次量测更新(先角度后距离)”算法实现}]
-	    KalmanFilter &KalmanFilter::MesUpdateSequentially2(const Measure &mes) {
-	        // update based on alpha measurement
-	        {
-	            double v2 = mes.alpha - MesPrediction(preState).alpha;
-	            Eigen::Matrix<double, 1, 4> h2 = MeasurementMat(preState).row(1);
-	            Eigen::Vector4d k2 = preState.var * h2.transpose()
-	                                 / ((h2 * preState.var * h2.transpose())(0, 0) + mes.sigma_a * mes.sigma_a);
-	            preState.state = preState.state + k2 * v2;
-	            preState.var = (Eigen::Matrix4d::Identity() - k2 * h2) * preState.var;
-	        }
-	        // update based on range measurement
-	        {
-	            double v1 = mes.range - MesPrediction(preState).range;
-	            Eigen::Matrix<double, 1, 4> h1 = MeasurementMat(preState).row(0);
-	            Eigen::Vector4d k1 = preState.var * h1.transpose()
-	                                 / ((h1 * preState.var * h1.transpose())(0, 0) + mes.sigma_r * mes.sigma_r);
-	            preState.state = preState.state + k1 * v1;
-	            preState.var = (Eigen::Matrix4d::Identity() - k1 * h1) * preState.var;
-	        }
-	        estState = preState;
-	        return *this;
-	    }
+    KalmanFilter &KalmanFilter::MesUpdateSequentially2(const Measure &mes) {
+        // update based on alpha measurement
+        {
+            double v2 = mes.alpha - MesPrediction(preState).alpha;
+            Eigen::Matrix<double, 1, 4> h2 = MeasurementMat(preState).row(1);
+            Eigen::Vector4d k2 = preState.var * h2.transpose()
+                                 / ((h2 * preState.var * h2.transpose())(0, 0) + mes.sigma_a * mes.sigma_a);
+
+            preState.state = preState.state + k2 * v2;
+            preState.var = (Eigen::Matrix4d::Identity() - k2 * h2) * preState.var;
+            preState.timestamp = mes.timestamp;
+        }
+        // update based on range measurement
+        {
+            double v1 = mes.range - MesPrediction(preState).range;
+            Eigen::Matrix<double, 1, 4> h1 = MeasurementMat(preState).row(0);
+            Eigen::Vector4d k1 = preState.var * h1.transpose()
+                                 / ((h1 * preState.var * h1.transpose())(0, 0) + mes.sigma_r * mes.sigma_r);
+
+            recorder.kxVec.emplace_back(mes.timestamp, (k1 * v1)(0, 0));
+            recorder.kyVec.emplace_back(mes.timestamp, (k1 * v1)(1, 0));
+            recorder.kvxVec.emplace_back(mes.timestamp, (k1 * v1)(2, 0));
+            recorder.kvyVec.emplace_back(mes.timestamp, (k1 * v1)(3, 0));
+
+            preState.state = preState.state + k1 * v1;
+            preState.var = (Eigen::Matrix4d::Identity() - k1 * h1) * preState.var;
+            preState.timestamp = mes.timestamp;
+        }
+        estState = preState;
+
+        recorder.estStates.push_back(estState);
+        return *this;
+    }
 	\end{lstlisting}
 		
 	\newpage

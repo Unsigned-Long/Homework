@@ -7,8 +7,6 @@
 #include "argparse.hpp"
 #include "config.h"
 #include "filesystem"
-#include "cereal/types/vector.hpp"
-#include "cereal/archives/json.hpp"
 
 std::vector<ns_kf::Measure> LoadMeasurements(const std::string &filename) {
     std::ifstream file(filename);
@@ -19,7 +17,7 @@ std::vector<ns_kf::Measure> LoadMeasurements(const std::string &filename) {
         auto items = ns_kf::SplitString(strLine, ',');
         double range = std::stod(items.at(0));
         double alpha = std::stod(items.at(1));
-        mesVec.emplace_back(t, range, alpha, 100.0, 1E-2);
+        mesVec.emplace_back(t, range, alpha, 10.0, 1E-2);
         t += 0.1;
     }
     file.close();
@@ -38,14 +36,12 @@ int main(int argc, char **argv) {
         std::cin.get();
 
         // perform filter
-        std::vector<ns_kf::State> estStates, preStates;
         auto filter = ns_kf::KalmanFilter::Create(c.init_state, c.kx, c.ky, c.gravity, c.sigma_ex, c.sigma_ey);
 
         for (const auto &mes: LoadMeasurements(c.data_path)) {
             std::cout << mes << std::endl;
 
             filter->StatePredict(mes.timestamp);
-            preStates.push_back(filter->GetPreState());
 
             switch (c.mode) {
 
@@ -62,7 +58,6 @@ int main(int argc, char **argv) {
                 }
                     break;
             }
-            estStates.push_back(filter->GetEstState());
         }
 
         // output results
@@ -72,10 +67,7 @@ int main(int argc, char **argv) {
         {
             std::ofstream file(c.output_path + "/results.json");
             auto ar = cereal::JSONOutputArchive(file);
-            ar(
-                    cereal::make_nvp("est_states", estStates),
-                    cereal::make_nvp("pre_states", preStates)
-            );
+            ar(cereal::make_nvp("Recorder", filter->GetRecorder()));
         }
 
     } catch (const std::exception &err) {

@@ -10,9 +10,30 @@
 #include <ostream>
 #include "state_manager.h"
 #include "mes_manager.h"
+#include "cereal/types/vector.hpp"
+#include "cereal/archives/json.hpp"
+#include "cereal/types/utility.hpp"
 
 namespace ns_kf {
 
+    struct StateRecorder {
+    public:
+        std::vector<State> preStates;
+        std::vector<State> estStates;
+        std::vector<std::pair<double, double>> kxVec, kyVec, kvxVec, kvyVec;
+    public:
+        StateRecorder() = default;
+
+    public:
+        // Serialization
+        template<class Archive>
+        void serialize(Archive &archive) {
+            archive(
+                    CEREAL_NVP(preStates), CEREAL_NVP(estStates),
+                    CEREAL_NVP(kxVec), CEREAL_NVP(kyVec), CEREAL_NVP(kvxVec), CEREAL_NVP(kvyVec)
+            );
+        }
+    };
 
     class KalmanFilter {
     public:
@@ -24,6 +45,8 @@ namespace ns_kf {
         const double kx, ky;
         const double gravity;
         const double sigma_ex, sigma_ey, sigma_ex2, sigma_ey2;
+
+        StateRecorder recorder;
 
     public:
 
@@ -44,6 +67,8 @@ namespace ns_kf {
         [[nodiscard]] const State &GetEstState() const;
 
         [[nodiscard]] const State &GetPreState() const;
+
+        const StateRecorder &GetRecorder() const;
 
     protected:
         [[nodiscard]] Eigen::Matrix4d StateTransitionMat(const State &curState, double dt) const;
