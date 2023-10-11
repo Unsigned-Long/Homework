@@ -61,6 +61,9 @@ namespace ns_kf {
         // variance propagation
         Eigen::Matrix4d errorMat = ErrorTransitionMat(estState, t - estState.timestamp);
         preState.var = phiMat * estState.var * phiMat.transpose() + errorMat;
+
+        // timestamp
+        preState.timestamp = t;
         return *this;
     }
 
@@ -113,6 +116,7 @@ namespace ns_kf {
                                  / ((h2 * preState.var * h2.transpose())(0, 0) + mes.sigma_a * mes.sigma_a);
             preState.state = preState.state + k2 * v2;
             preState.var = (Eigen::Matrix4d::Identity() - k2 * h2) * preState.var;
+            preState.timestamp = mes.timestamp;
         }
         // update based on range measurement
         {
@@ -122,6 +126,7 @@ namespace ns_kf {
                                  / ((h1 * preState.var * h1.transpose())(0, 0) + mes.sigma_r * mes.sigma_r);
             preState.state = preState.state + k1 * v1;
             preState.var = (Eigen::Matrix4d::Identity() - k1 * h1) * preState.var;
+            preState.timestamp = mes.timestamp;
         }
         estState = preState;
         return *this;
@@ -135,6 +140,7 @@ namespace ns_kf {
                                         (h * preState.var * h.transpose() + mes.VarMat()).inverse();
         estState.state = preState.state + k * v;
         estState.var = (Eigen::Matrix4d::Identity() - k * h) * preState.var;
+        estState.timestamp = mes.timestamp;
         return *this;
     }
 

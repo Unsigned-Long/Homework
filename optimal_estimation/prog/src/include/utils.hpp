@@ -49,7 +49,22 @@ namespace Eigen {
 }
 
 namespace ns_kf {
-
+    static std::vector<std::string> SplitString(const std::string &str, char splitor, bool ignoreEmpty = true) {
+        std::vector<std::string> vec;
+        auto iter = str.cbegin();
+        while (true) {
+            auto pos = std::find(iter, str.cend(), splitor);
+            auto elem = std::string(iter, pos);
+            if (!(elem.empty() && ignoreEmpty)) {
+                vec.push_back(elem);
+            }
+            if (pos == str.cend()) {
+                break;
+            }
+            iter = ++pos;
+        }
+        return vec;
+    }
 }
 
 #endif //KALMAN_FILTER_UTILS_HPP

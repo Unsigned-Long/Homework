@@ -43,7 +43,7 @@ namespace ns_kf {
 
         [[nodiscard]] const State &GetEstState() const;
 
-        const State &GetPreState() const;
+        [[nodiscard]] const State &GetPreState() const;
 
     protected:
         [[nodiscard]] Eigen::Matrix4d StateTransitionMat(const State &curState, double dt) const;

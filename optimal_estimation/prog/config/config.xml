@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <cereal>
     <config>
-        <data_path>/home/csl/Homework/optimal_estimation/prog/data/mes.txt</data_path>
+        <data_path>/home/csl/Homework/optimal_estimation/prog/data/observation.txt</data_path>
         <output_path>/home/csl/Homework/optimal_estimation/prog/data</output_path>
+        <!-- 0: ns_kf::SolveMode::GLOBAL_EKF -->
+        <!-- 1: ns_kf::SolveMode::LOCAL_EKF_1 -->
+        <!-- 2: ns_kf::SolveMode::LOCAL_EKF_2 -->
         <mode>0</mode>
         <kx>0.01</kx>
         <ky>0.05</ky>

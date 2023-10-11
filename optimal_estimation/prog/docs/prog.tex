@@ -111,10 +111,26 @@
 		% 阿拉伯数字形式的页码
 		\pagenumbering{arabic}
 	
-	\section{\normf{问题分析}}
+	\section{\normf{实习题目}}
 	
 	\normf
-	\subsection{\normf 状态转移方程}
+	\subsection{\normf{问题描述}}
+	由题意知，该问题为一个二维(水平方向和垂直方向)的状态估计问题。具体来说，该系统中：
+	\begin{enumerate}
+	\item 待估计的状态有：二维的位置状态和二维的速度状态；
+	\item 输入：自身所受到重力；
+	\item 干扰：不确定的零均值白噪声干扰力；
+	\end{enumerate}
+	
+	基于此，可以得到该连续型系统的数学模型。需要注意的是，由于该数学模型是非线性的，所以需要先进行线性化操作，而后才能进行离散化，最终得到状态转移方程。
+	
+	在观测方程方面，已知观测值是角度和距离，是一组二维的观测值。容易通过三角函数得到该观测值和状态向量之间的函数关系，从而构建观测方程。同样的，该观测方程也是非线性的，所以也需要进行线性化。
+	
+	在观测更新处理方面，可以有两种选择：$(i)$基于所有的观测值对预测状态进行整体更新，或者$(ii)$ 对观测向量中的每一维观测值进行逐次更新状态。二者对应于$(i)$ 扩展卡尔曼滤波，和$(ii)$观测值逐次更新的扩展卡尔曼滤波。
+	
+	\section{\normf{分析和解题}}
+	
+	\subsection{\normf 状态方程和观测方程}
 	设$t$时刻的状态向量为$\boldsymbol{X}(t)=\left( x(t),y(t),v_x(t),v_y(t)\right) ^\top$，则根据题意，得到该系统的连续时间微分方差为
 	：
 	\begin{equation}
@@ -232,7 +248,7 @@
 	\left(\Delta t+2k_yv_y^*(\Delta t)^2+\frac{4}{3}(k_yv^*_y)^2(\Delta t)^3 \right) \sigma_{e_y}^2
 	\end{pmatrix}
 	\end{equation}
-	\subsection{\normf 测量更新方程}
+	
 	令$\boldsymbol{Z}(t_k)=\left( r(t_k),\alpha(t_k)\right) ^\top$，则有：
 	\begin{equation}
 	\boldsymbol{Z}(t_k)=\begin{pmatrix}
