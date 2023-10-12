@@ -96,8 +96,8 @@
 		\pagenumbering{roman}
 		\tableofcontents
 		\newpage
-		\listoffigures
-		\newpage
+%		\listoffigures
+%		\newpage
 		\listoftables
 		% 罗马字母形式的页码
 		
@@ -107,8 +107,28 @@
 		% 阿拉伯数字形式的页码
 		\pagenumbering{arabic}
 	
+	\section{\normf{代码运行环境说明}}
+	
+		\normf
+		表\ref{tab:代码运行环境}显示了本次编程测试的运行环境。本次代码使用\emph{CPP 17}实现，使用到了线性代数库\emph{Eigen}。代码虽然在\emph{Ubuntu}上实现， 但由于是\emph{Cmake}架构的项目，所以具有跨平台的特征，即可以在\emph{Windows}平台和\emph{Mac}上编译运行。
+		
+		% Please add the following required packages to your document preamble:
+		% \usepackage{multirow}
+		\begin{table}[h]
+		\centering
+		\caption{\normf 代码运行环境}
+		\label{tab:代码运行环境}
+		\vspace{2mm}
+		\begin{tabular}{ccc|cl}
+		\toprule
+		\multicolumn{1}{c|}{\multirow{2}{*}{Config.}} & OS name & Ubuntu 20.04.6 LTS & Processor              & 12th Gen Intel® Core™ i9-12900H × 20              \\ \cmidrule{2-5} 
+		\multicolumn{1}{c|}{}                         & OS Type & 64-bit             & Graphics               & Mesa Intel® Graphics (ADL GT2)                    \\ \midrule[1pt]\midrule[1pt]
+		\multicolumn{3}{c|}{Library}                                                 & \multicolumn{2}{c}{Link}                                                   \\ \midrule
+		\multicolumn{3}{c|}{Eigen3}                                                  & \multicolumn{2}{c}{https://eigen.tuxfamily.org/index.php?title=Main\_Page}              \\ \bottomrule
+		\end{tabular}
+		\end{table}
+		
 	\section{\normf{LU分解}}
-	\normf
 	\subsection{\normf{算法描述}}
 	对于线性方程组$\boldsymbol{Ax=b}$中的系数方阵$\boldsymbol{A}$，可以通过将其进行LU分解，得到：
 	\begin{equation}
@@ -151,8 +171,136 @@
 	
 	
 	\subsection{\normf{实验结果}}
+	\subsubsection{\normf{小型随机矩阵测试}}
+	$5\times 5$的系数矩阵$\boldsymbol{A}$:
+	\begin{equation}
+	\boldsymbol{A}=\begin{pmatrix}
+	 0.68038 &-0.60490 &-0.04521&  0.83239& -0.96740\\
+	-0.21123 &-0.32955 & 0.25774&  0.27142& -0.51423\\
+	 0.56620 & 0.53646 &-0.27043&  0.43459& -0.72554\\
+	 0.59688 &-0.44445 & 0.02680& -0.71679&  0.60835\\
+	 0.82329 & 0.10794 & 0.90446&  0.21394& -0.68664\\
+	\end{pmatrix}
+	\end{equation}
+	系数矩阵$\boldsymbol{A}$的LU分解结果：
+	\begin{equation}
+	\boldsymbol{L}=\begin{pmatrix}
+	 1.00000&  0.00000&  0.00000&  0.00000 & 0.00000\\
+	-0.31047&  1.00000&  0.00000&  0.00000 & 0.00000\\
+	 0.83219& -2.00993&  1.00000&  0.00000 & 0.00000\\
+	 0.87728& -0.16664&  0.41659&  1.00000 & 0.00000\\
+	 1.21006& -1.62345&  5.27118&  2.46993 & 1.00000\\
+	\end{pmatrix}
+	\end{equation}
+	\begin{equation}
+	\boldsymbol{U}=\begin{pmatrix}
+	 0.68038& -0.60490& -0.04521 & 0.83239& -0.96740\\
+	 0.00000& -0.51736&  0.24371 & 0.52985& -0.81457\\
+	 0.00000&  0.00000&  0.25702 & 0.80686& -1.55771\\
+	 0.00000&  0.00000&  0.00000 &-1.69487&  1.97022\\
+	 0.00000&  0.00000&  0.00000 & 0.00000&  2.50623\\
+	\end{pmatrix}
+	\end{equation}
+	真值：
+	\begin{equation}
+	\boldsymbol{x}_{gt}^\top=\begin{pmatrix}
+	-0.19811 &-0.74042& -0.78238 & 0.99785& -0.56349
+	\end{pmatrix}
+	\end{equation}
+	解算结果：
+	\begin{equation}
+	\boldsymbol{x}_{sl}^\top=\begin{pmatrix}
+	-0.19811 &-0.74042& -0.78238 & 0.99785& -0.56349
+	\end{pmatrix}
+	\end{equation}
+	验证了算法的正确性。
+	
+	\subsubsection{\normf{大型随机矩阵测试}}
+	通过随机函数，构建了一个$1000\times 1000$的随机矩阵，并使用所实现的算法进行了求解，统计其平均运行时间和计算误差，结果如下：
+	% Please add the following required packages to your document preamble:
+	% \usepackage{multirow}
+	\begin{table}[h]
+	\normf
+	\centering
+	\caption{\normf{测试结果}}
+	\vspace{2mm}
+	\begin{tabular}{c|ccc}
+	\toprule
+	\multirow{2}{*}{矩阵维数} & \multicolumn{2}{c}{运行时间（秒）} & \multirow{2}{*}{计算误差} \\ \cmidrule{2-3}
+	                      & LU分解        & 方程求解（LU分解+回代） &                       \\ \midrule
+	10                    & 5.89340e-06 & 1.43406e-05   & 4.82033e-15           \\
+	100                   & 4.22002e-03 & 4.24337e-03   & 5.08518e-12           \\
+	1000                  & 3.37420e+1  & 3.37437e+1    & 4.03739e-10           \\ \bottomrule
+	\end{tabular}
+	\end{table}
+	
+	由于该算法的计算量主要集中在LU分解，其时间复杂度为$\mathcal{O}(n^2)$，所以当矩阵的维数增加时，运行时间显著增加。由于计算机的舍入误差，当矩阵的维数增加时，计算次数增加，相应的误差也增加。
+	
+	\subsection{\normf{关键代码}}
+	\begin{lstlisting}[caption=对矩阵$\boldsymbol{A}$的LU分解]
+    void LUFactorization(const Eigen::MatrixXd &AMat, Eigen::MatrixXd &LMat, Eigen::MatrixXd &UMat) {
+        assert(AMat.rows() == AMat.cols());
+        auto n = AMat.rows();
+
+        LMat = Eigen::MatrixXd::Identity(n, n);
+        UMat = AMat;
+        for (int c = 0; c < n - 1; ++c) {
+            Eigen::MatrixXd curLMatInv = Eigen::MatrixXd::Identity(n, n);
+            for (int r = c + 1; r < n; ++r) {
+                double l = UMat(r, c) / UMat(c, c);
+                curLMatInv(r, c) = l;
+                UMat.row(r) = UMat.row(r) - l * UMat.row(c);
+            }
+            LMat = LMat * curLMatInv;
+        }
+    }
+	\end{lstlisting}
+	
+	\begin{lstlisting}[caption=杜利特尔(Doolittle)分解求解线性方程组]
+	 void EquSolvingByLU(const Eigen::MatrixXd &AMat, const Eigen::VectorXd &bVec, Eigen::VectorXd &xVec) {
+	     assert(AMat.rows() == AMat.cols());
+	     assert(AMat.rows() == bVec.rows());
+	     auto n = AMat.rows();
+	
+	     Eigen::MatrixXd LMat, UMat;
+	     ns_na::LUFactorization(AMat, LMat, UMat);
+	     // A = LU, LUx = b, Ly = b, Ux = y
+	     // ------
+	     // Ly = b
+	     // ------
+	     Eigen::VectorXd yVec(n);
+	     yVec(0) = bVec(0) / LMat(0, 0);
+	     for (int r = 1; r < n; ++r) {
+	         yVec(r) = bVec(r) - (LMat.block(r, 0, 1, r) * yVec.block(0, 0, r, 1))(0, 0);
+	     }
+	     // ------
+	     // Ux = y
+	     // ------
+	     xVec = Eigen::VectorXd(n);
+	     xVec(n - 1) = yVec(n - 1) / UMat(n - 1, n - 1);
+	     for (int r = static_cast<int>(n) - 2; r >= 0; --r) {
+	         xVec(r) = (yVec(r) - (UMat.block(r, r + 1, 1, n - r - 1)
+	                               * xVec.block(r + 1, 0, n - r - 1, 1))(0, 0)) / UMat(r, r);
+	     }
+	 }
+	\end{lstlisting}
+	
+	\newpage
+	\section{\normf{梯度下降}}
+	\subsection{\normf{算法描述}}
+	\subsection{\normf{实验结果}}
+	\subsubsection{\normf{小型稀疏矩阵测试}}
+	\subsubsection{\normf{大型稀疏矩阵测试}}
 	\subsection{\normf{关键代码}}
 	
+	\newpage
+	\section{\normf{共轭梯度}}
+	\subsection{\normf{算法描述}}
+	\subsection{\normf{实验结果}}
+	\subsubsection{\normf{小型稀疏矩阵测试}}
+	\subsubsection{\normf{大型稀疏矩阵测试}}
+	\subsection{\normf{关键代码}}
+		
 	\newpage
 	\section{ACKNOWLEDGMENT}
 	\begin{tcolorbox}[colback=white,colframe=white!70!black,title={\bfseries Author Information}]

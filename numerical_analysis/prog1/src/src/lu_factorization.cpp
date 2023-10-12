@@ -25,7 +25,9 @@ namespace ns_na {
         auto n = AMat.rows();
 
         Eigen::MatrixXd LMat, UMat;
+        spdlog::stopwatch sw;
         ns_na::LUFactorization(AMat, LMat, UMat);
+        spdlog::info("lu factorization runtime: {} (s)", sw);
         // A = LU, LUx = b, Ly = b, Ux = y
         // ------
         // Ly = b
