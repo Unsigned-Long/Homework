@@ -271,7 +271,7 @@
     }
 	\end{lstlisting}
 	
-	\begin{lstlisting}[caption=杜利特尔(Doolittle)分解求解线性方程组]
+	\begin{lstlisting}[caption=\normf 求解线性方程组]
 	 void EquSolvingByLU(const Eigen::MatrixXd &AMat, const Eigen::VectorXd &bVec, Eigen::VectorXd &xVec) {
 	     assert(AMat.rows() == AMat.cols());
 	     assert(AMat.rows() == bVec.rows());
@@ -398,11 +398,18 @@
 	矩阵维数 & 迭代次数  & 迭代阈值  & 运行时间（秒）     & 计算误差        \\ \midrule
 	10   & 473   & 1e-10 & 3.62630e-05 & 1.66156e-09 \\
 	100  & 30375 & 1e-10 & 6.37322e-03 & 1.51287e-07 \\
-	1000 & 41218 & 1e-10 & 4.33385e-00 & 1.71437e-01 \\ \bottomrule
+	1000 & 41218 & 1e-10 & 4.33385e-00 & 1.71437e-03 \\ \bottomrule
 	\end{tabular}
 	\end{table}
 	
-		
+	\begin{figure}[h]
+		\centering
+		\includegraphics[width=\linewidth]{../img/updates_sd.pdf}
+		\caption{\normf $1000\times 1000$最速下降法迭代前50次解向量更新量}
+		\label{fig:最速下降法迭代前50次解向量更新量}
+	\end{figure}
+	图\ref{fig:最速下降法迭代前50次解向量更新量}描述了最速下降法迭代前50次解向量更新量的变化。可以看到，在前5次迭代中，下降最为明显，而后下降速度明显减慢。也即，在接近极小点时，“最速下降法”步长越来越小，移动越来越慢，导致收敛速度慢。
+				
 		基于上述实验，可以得到：
 		\begin{enumerate}
 		\item 当目标函数为二次函数时，“最速下降法”具有二阶收敛速度。
@@ -423,7 +430,6 @@
         xVec = xVec0;
         Eigen::VectorXd rVec = bVec - AMat * xVec;
         while (true) {
-            LOG_VAR(xVec.transpose())
             Eigen::VectorXd ar = AMat * rVec;
             double alpha = rVec.dot(rVec) / rVec.dot(ar);
             xVec = xVec + alpha * rVec;
@@ -521,6 +527,7 @@
 		的系数矩阵，而后随机生成$\boldsymbol{x}$向量，进而得到$\boldsymbol{b}$向量。解向量的初值设为零向量。
 		
 		本次一共测试了三种维度的矩阵：$10\times 10$、$100\times 100$和$1000\times 1000$的矩阵。结果如下表所示。可以看到，相较于“最速下降法”，“共轭梯度下降”的迭代次数明显减小，运行时间更短，计算的误差更小。
+		同时可以发现，当目标函数为二次函数时，“共轭梯度下降”具有最优的收敛速度，即最多迭代$n$次就可以得到精确解，其中$n$是未知数的个数。
 		\begin{table}[h]
 		\normf
 			\centering
@@ -529,11 +536,19 @@
 		\begin{tabular}{c|cccc}
 		\hline
 		矩阵维数 & 迭代次数 & 迭代阈值  & 运行时间（秒）     & 计算误差       \\ \hline
-		10   & 11   & 1e-10 & 3.66380e-05 & 1.0000e-30 \\
-		100  & 101  & 1e-10 & 1.36137e-04 & 1.2680e-27 \\
-		1000 & 1001 & 1e-10 & 1.12081e-01 & 6.3807e-22 \\ \hline
+		10   & 10   & 1e-10 & 3.66380e-05 & 1.0000e-30 \\
+		100  & 100  & 1e-10 & 1.36137e-04 & 1.2680e-27 \\
+		1000 & 1000 & 1e-10 & 1.12081e-01 & 6.3807e-22 \\ \hline
 		\end{tabular}
 		\end{table}
+		
+		\begin{figure}[h]
+			\centering
+			\includegraphics[width=\linewidth]{../img/updates_cg.pdf}
+			\caption{\normf $1000\times 1000$共轭下梯度降法迭代前50次解向量更新量}
+			\label{fig:共轭下降法迭代前50次解向量更新量}
+		\end{figure}
+		图\ref{fig:共轭下降法迭代前50次解向量更新量}描述了共轭下降法迭代前50次解向量更新量的变化。可以看到，在前5次迭代中，下降最为明显，而后下降速度明显减慢。
 		
 		基于上述实验，可以得到：
 		\begin{enumerate}
