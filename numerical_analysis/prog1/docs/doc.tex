@@ -444,8 +444,88 @@
 	
 	\subsection{\normf{实验结果}}
 	\subsubsection{\normf{小型稀疏矩阵测试}}
+	设要求解的线性方程组为：
+		\begin{equation}
+		\begin{pmatrix}
+		3&2\\2&6
+		\end{pmatrix}\boldsymbol{x}=\begin{pmatrix}
+		2\\-8
+		\end{pmatrix}
+		\end{equation}
+		迭代的初始值$\boldsymbol{x}^{(0)}$选取两种：
+		\begin{equation}
+		\boldsymbol{x}_0^{(0)}=\begin{pmatrix}
+		-2&-2
+		\end{pmatrix}^\top
+		\quad
+		\boldsymbol{x}_1^{(0)}=\begin{pmatrix}
+			5&2
+			\end{pmatrix}^\top
+		\end{equation}
+		
+		图\ref{fig:共轭梯度下降法迭代过程图}描述了该测试案例中的迭代过程，其中左图对于第一种初值选取，右图对应第二种初值选取。可以看到相较于“最速下降法”，“共轭梯度下降法”迭代次数更少。在两种初值选取中，都只用了2次迭代，即可到达最低点：
+		\begin{equation}
+		\boldsymbol{x}_{gt}=\begin{pmatrix}
+		2,-2
+		\end{pmatrix}^\top
+		\end{equation}
+			\begin{figure}[h]
+				\centering
+				\includegraphics[width=0.48\linewidth]{../img/conj_grad_1.pdf}
+				\includegraphics[width=0.48\linewidth]{../img/conj_grad_2.pdf}
+				\caption{\normf 不同初值下的共轭梯度下降法迭代过程图}
+				\label{fig:共轭梯度下降法迭代过程图}
+			\end{figure}
 	\subsubsection{\normf{大型稀疏矩阵测试}}
+	通过构建形如：
+		\begin{equation}
+		\boldsymbol{A}=\begin{pmatrix}
+		2&-1&0&&&\cdots\\
+		-1&2&-1&0&&\cdots\\
+		0&-1&2&-1&0&\cdots\\
+		&&\cdots\\
+		&&\cdots&-1&2&-1\\
+		&&\cdots&&-1&2
+		\end{pmatrix}
+		\end{equation}
+		的系数矩阵，而后随机生成$\boldsymbol{x}$向量，进而得到$\boldsymbol{b}$向量。解向量的初值设为零向量。
+		
+		本次一共测试了三种维度的矩阵：$10\times 10$、$100\times 100$和$1000\times 1000$的矩阵。结果如下表所示。可以看到，相较于“最速下降法”，“共轭梯度下降”的迭代次数明显减小，运行时间更短，计算的误差更小。
+		\begin{table}[h]
+		\normf
+			\centering
+			\caption{\normf 测试结果}
+			\vspace{2mm}
+		\begin{tabular}{c|cccc}
+		\hline
+		矩阵维数 & 迭代次数 & 迭代阈值  & 运行时间（秒）     & 计算误差       \\ \hline
+		10   & 11   & 1e-10 & 3.66380e-05 & 1.0000e-30 \\
+		100  & 101  & 1e-10 & 1.36137e-04 & 1.2680e-27 \\
+		1000 & 1001 & 1e-10 & 1.12081e-01 & 6.3807e-22 \\ \hline
+		\end{tabular}
+		\end{table}
+		
 	\subsection{\normf{关键代码}}
+	\begin{lstlisting}[caption=\normf{共轭梯度下降法}]
+    void conjugate_gradient(const Eigen::MatrixXd &AMat, const Eigen::VectorXd &bVec, const Eigen::VectorXd &xVec0,
+                            Eigen::VectorXd &xVec, double thresh) {
+        xVec = xVec0;
+        Eigen::VectorXd rVec = bVec - AMat * xVec;
+        Eigen::VectorXd pVec = rVec;
+        while (true) {
+            Eigen::VectorXd ap = AMat * pVec;
+            double alpha = rVec.dot(pVec) / ap.dot(pVec);
+            xVec = xVec + alpha * pVec;
+            if (alpha * pVec.squaredNorm() < thresh) {
+                break;
+            }
+            double beta1 = rVec.dot(rVec);
+            rVec = rVec - alpha * ap;
+            double beta2 = rVec.dot(rVec) / beta1;
+            pVec = rVec + beta2 * pVec;
+        }
+    }
+	\end{lstlisting}
 		
 	\newpage
 	\section{ACKNOWLEDGMENT}

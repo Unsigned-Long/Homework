@@ -26,13 +26,24 @@ import numpy as np
 #     2.00000, -2.00000,
 # ]
 
+# steps = [
+#     5.00000, 2.00000,
+#     2.56675, -2.29397,
+#     2.01431, -1.98092,
+#     2.00270, -2.00140,
+#     2.00007, -1.99991,
+#     2.00001, -2.00001,
+#     2.00000, -2.00000,
+# ]
+
+# steps = [
+#     -2.00000, -2.00000,
+#     0.08000, -0.61333,
+#     2.00000, -2.00000,
+# ]
 steps = [
     5.00000, 2.00000,
     2.56675, -2.29397,
-    2.01431, -1.98092,
-    2.00270, -2.00140,
-    2.00007, -1.99991,
-    2.00001, -2.00001,
     2.00000, -2.00000,
 ]
 colors = [
@@ -54,7 +65,7 @@ if __name__ == '__main__':
     )
 
     ax.clabel(CS, inline=True, fontsize=20)
-    ax.set_title('Steepest Descent')
+    ax.set_title('Conjugate Gradient')
     ax.set_box_aspect(1)
     ax.set_xlabel(drawer.math_symbols('x_1'))
     ax.set_ylabel(drawer.math_symbols('x_2'))
@@ -62,4 +73,4 @@ if __name__ == '__main__':
     drawer.set_xticks(ax, -4, 6, 10)
     drawer.set_yticks(ax, -6, 4, 10)
     drawer.add_grids(ax)
-    drawer.show_figure('/home/csl/Homework/numerical_analysis/prog1/img/steep_desc_2.pdf')
+    drawer.show_figure('/home/csl/Homework/numerical_analysis/prog1/img/conj_grad_2.pdf')
