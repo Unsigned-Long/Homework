@@ -112,6 +112,8 @@
 		\normf
 		表\ref{tab:代码运行环境}显示了本次编程测试的运行环境。本次代码使用\emph{CPP 17}实现，使用到了线性代数库\emph{Eigen}。代码虽然在\emph{Ubuntu}上实现， 但由于是\emph{Cmake}架构的项目，所以具有跨平台的特征，即可以在\emph{Windows}平台和\emph{Mac}上编译运行。
 		
+		绘图使用\emph{Python}中的\emph{matploylib}库实现，具体的绘图脚本在\emph{script}文件夹下。
+		
 		% Please add the following required packages to your document preamble:
 		% \usepackage{multirow}
 		\begin{table}[h]
@@ -236,8 +238,21 @@
 	
 	由于该算法的计算量主要集中在LU分解，其时间复杂度为$\mathcal{O}(n^2)$，所以当矩阵的维数增加时，运行时间显著增加。由于计算机的舍入误差，当矩阵的维数增加时，计算次数增加，相应的误差也增加。
 	
+	基于上述实验，可以得到：
+	\begin{enumerate}
+	\item LU分解可以避免高斯消元法中的多次除法运算，提高计算效率。
+	
+	\item LU分解可以重复利用分解后的矩阵，对于同一个系数矩阵但不同的右端项，只需要进行一次前向和后向替换，而不需要重新分解。
+	
+	\item LU分解需要额外的存储空间来保存分解后的矩阵，占用了内存资源。
+	
+	\item LU分解对于奇异矩阵或接近奇异的矩阵可能失败或不稳定，需要进行部分或完全主元选取，增加了计算复杂度。
+	
+	\item LU分解对于大规模的稀疏矩阵可能导致填充现象，即分解后的矩阵比原矩阵更稠密，造成存储和计算的浪费。
+	\end{enumerate}
+	
 	\subsection{\normf{关键代码}}
-	\begin{lstlisting}[caption=对矩阵$\boldsymbol{A}$的LU分解]
+	\begin{lstlisting}[caption=\normf 对矩阵$\boldsymbol{A}$的LU分解]
     void LUFactorization(const Eigen::MatrixXd &AMat, Eigen::MatrixXd &LMat, Eigen::MatrixXd &UMat) {
         assert(AMat.rows() == AMat.cols());
         auto n = AMat.rows();
@@ -286,7 +301,7 @@
 	\end{lstlisting}
 	
 	\newpage
-	\section{\normf{梯度下降}}
+	\section{\normf{最速梯度下降}}
 	\subsection{\normf{算法描述}}
 	若系数矩阵$\boldsymbol{A}$为对称正定矩阵，则求解线性方程组$\boldsymbol{Ax}=\boldsymbol{b}$等价于求解二次函数$f(\boldsymbol{x})=0.5\times \boldsymbol{x}^\top\boldsymbol{A}\boldsymbol{x}-\boldsymbol{b}^\top\boldsymbol{x}$的极小点。
 	
@@ -324,7 +339,7 @@
 	\end{equation}
 	
 	\subsection{\normf{实验结果}}
-	\subsubsection{\normf{小型稀疏矩阵测试}}
+	\subsubsection{\normf{小型矩阵测试}}
 	设要求解的线性方程组为：
 	\begin{equation}
 	\begin{pmatrix}
@@ -386,6 +401,21 @@
 	1000 & 41218 & 1e-10 & 4.33385e-00 & 1.71437e-01 \\ \bottomrule
 	\end{tabular}
 	\end{table}
+	
+		
+		基于上述实验，可以得到：
+		\begin{enumerate}
+		\item 当目标函数为二次函数时，“最速下降法”具有二阶收敛速度。
+		
+		\item 收敛速度并不快，因为最速下降方向仅仅是指某点的一个局部性质。
+		
+		\item 在接近极小点时，步长越来越小，移动越来越慢，导致最速下降法的收敛速度很慢。
+		
+		\item 在某些情况下，可能出现锯齿现象，即相邻两次迭代的方向互相垂直，使得迭代点曲折前进。
+		
+		\item 对于非二次函数，可能存在震荡或者停滞现象。
+		\end{enumerate}
+	
 	\subsection{\normf{关键代码}}
 	\begin{lstlisting}[caption=\normf{最速下降法代码}]
     void steepest_descent(const Eigen::MatrixXd &AMat, const Eigen::VectorXd &bVec, const Eigen::VectorXd &xVec0,
@@ -406,7 +436,7 @@
 	\end{lstlisting}
 	
 	\newpage
-	\section{\normf{共轭梯度}}
+	\section{\normf{共轭梯度下降}}
 	\subsection{\normf{算法描述}}
 	对于线性方程组$\boldsymbol{A}\boldsymbol{x}=\boldsymbol{b}$，设：
 	\begin{equation}
@@ -443,7 +473,7 @@
 	\end{enumerate}
 	
 	\subsection{\normf{实验结果}}
-	\subsubsection{\normf{小型稀疏矩阵测试}}
+	\subsubsection{\normf{小型矩阵测试}}
 	设要求解的线性方程组为：
 		\begin{equation}
 		\begin{pmatrix}
@@ -504,6 +534,21 @@
 		1000 & 1001 & 1e-10 & 1.12081e-01 & 6.3807e-22 \\ \hline
 		\end{tabular}
 		\end{table}
+		
+		基于上述实验，可以得到：
+		\begin{enumerate}
+		\item 当目标函数为二次函数时，具有最优的收敛速度，即最多迭代 n 次就可以得到精确解，其中 n 是未知数的个数。
+		
+		\item 不需要存储整个系数矩阵，只需要每次计算矩阵和向量的乘积，因此节省了存储空间和计算时间。
+		
+		\item 可以用于求解大规模的稀疏线性方程组，也可以用于求解非线性方程组和最优化问题。
+		
+		\item 对初始值敏感，不同的初始值可能导致不同的收敛速度和迭代次数。
+		
+		\item 对系数矩阵的条件数敏感，条件数越大，收敛速度越慢，甚至可能发散。
+		
+		\item 需要计算矩阵和向量的乘积，如果矩阵非常稠密或者结构复杂，这一步可能很耗时。
+		\end{enumerate}
 		
 	\subsection{\normf{关键代码}}
 	\begin{lstlisting}[caption=\normf{共轭梯度下降法}]
