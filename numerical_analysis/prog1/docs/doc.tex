@@ -288,14 +288,160 @@
 	\newpage
 	\section{\normf{梯度下降}}
 	\subsection{\normf{算法描述}}
+	若系数矩阵$\boldsymbol{A}$为对称正定矩阵，则求解线性方程组$\boldsymbol{Ax}=\boldsymbol{b}$等价于求解二次函数$f(\boldsymbol{x})=0.5\times \boldsymbol{x}^\top\boldsymbol{A}\boldsymbol{x}-\boldsymbol{b}^\top\boldsymbol{x}$的极小点。
+	
+	对$f(\boldsymbol{x})$求导，得到负梯度方向：
+	\begin{equation}
+	\boldsymbol{p}=-\triangledown f(\boldsymbol{x})=\boldsymbol{b}-\boldsymbol{A}\boldsymbol{x}=\boldsymbol{r}
+	\end{equation}
+	为了使得下降后的函数最小，即求解：
+	\begin{equation}
+	g(\alpha)=f(\boldsymbol{x}+\alpha\boldsymbol{r})
+	=0.5\times\left( \boldsymbol{x}+\alpha\boldsymbol{r}\right) ^\top\boldsymbol{A}\left( \boldsymbol{x}+\alpha\boldsymbol{r}\right)
+	-\boldsymbol{b}^\top\left( \boldsymbol{x}+\alpha\boldsymbol{r}\right)
+	\end{equation}
+	的最小值对应的$\alpha$。由于：
+	\begin{equation}
+	g^\prime(\alpha)=\alpha\boldsymbol{r}^\top\boldsymbol{A}\boldsymbol{r}-\boldsymbol{r}^\top\boldsymbol{r}
+	\end{equation}
+	且有：
+	\begin{equation}
+	g^\prime\prime(\alpha)=\boldsymbol{r}^\top\boldsymbol{A}\boldsymbol{r}>0
+	\end{equation}
+	所以最小值在$g^\prime(\alpha)=0$处取得，即有：
+	\begin{equation}
+	\alpha=\frac{\boldsymbol{r}^\top\boldsymbol{r}}{\boldsymbol{r}^\top\boldsymbol{A}\boldsymbol{r}}
+	\end{equation}
+	所以每次对$\boldsymbol{x}$向量的更新量为：
+	\begin{equation}
+	\boldsymbol{x}_{k+1}\gets\boldsymbol{x}_{k}+\alpha_k\cdot\boldsymbol{r}_{k}
+	\end{equation}
+	对$\boldsymbol{r}_k$的更新为：
+	\begin{equation}
+	\boldsymbol{r}_{k+1}=\boldsymbol{b}-\boldsymbol{A}\boldsymbol{x}_{k+1}=
+	\boldsymbol{b}-\boldsymbol{A}\left( \boldsymbol{x}_{k}+\alpha_k\cdot\boldsymbol{r}_{k}\right) =
+	\boldsymbol{r}_k-\alpha\boldsymbol{A}\boldsymbol{r}_k
+	\end{equation}
+	
 	\subsection{\normf{实验结果}}
 	\subsubsection{\normf{小型稀疏矩阵测试}}
+	设要求解的线性方程组为：
+	\begin{equation}
+	\begin{pmatrix}
+	3&2\\2&6
+	\end{pmatrix}\boldsymbol{x}=\begin{pmatrix}
+	2\\-8
+	\end{pmatrix}
+	\end{equation}
+	迭代的初始值$\boldsymbol{x}^{(0)}$选取两种：
+	\begin{equation}
+	\boldsymbol{x}_0^{(0)}=\begin{pmatrix}
+	-2&-2
+	\end{pmatrix}^\top
+	\quad
+	\boldsymbol{x}_1^{(0)}=\begin{pmatrix}
+		5&2
+		\end{pmatrix}^\top
+	\end{equation}
+	
+	图\ref{fig:最速下降法迭代过程图}描述了该测试案例中的迭代过程，其中左图对于第一种初值选取，右图对应第二种初值选取。可以看到对于不同的初值，迭代的步长和步数都存在较大的差异。在最开始的时候，迭代的步长较大，而后逐渐减小并逼近真值：
+	\begin{equation}
+	\boldsymbol{x}_{gt}=\begin{pmatrix}
+	2,-2
+	\end{pmatrix}^\top
+	\end{equation}
+		\begin{figure}[h]
+			\centering
+			\includegraphics[width=0.48\linewidth]{../img/steep_desc_1.pdf}
+			\includegraphics[width=0.48\linewidth]{../img/steep_desc_2.pdf}
+			\caption{\normf 不同初值下的最速下降法迭代过程图}
+			\label{fig:最速下降法迭代过程图}
+		\end{figure}
+	
 	\subsubsection{\normf{大型稀疏矩阵测试}}
+	通过构建形如：
+	\begin{equation}
+	\boldsymbol{A}=\begin{pmatrix}
+	2&-1&0&&&\cdots\\
+	-1&2&-1&0&&\cdots\\
+	0&-1&2&-1&0&\cdots\\
+	&&\cdots\\
+	&&\cdots&-1&2&-1\\
+	&&\cdots&&-1&2
+	\end{pmatrix}
+	\end{equation}
+	的系数矩阵，而后随机生成$\boldsymbol{x}$向量，进而得到$\boldsymbol{b}$向量。解向量的初值设为零向量。
+	
+	本次一共测试了三种维度的矩阵：$10\times 10$、$100\times 100$和$1000\times 1000$的矩阵。结果如下表所示。相较于“LU分解法”相比，运行时间更少(同时应该考虑迭代终止阈值的设置)。“迭代求解法”相较于“LU分解法”可操控性更强，可以通过改变迭代终止阈值，在计算精度和计算效率两个方面进行权衡，这对于实时性的应用尤为重要。但是需要注意的是，这种迭代方法的初值选取较为重要，影响着迭代步数。
+	\begin{table}[h]
+	\normf
+	\centering
+	\caption{\normf 测试结果}
+	\vspace{2mm}
+	\begin{tabular}{c|cccc}
+	\toprule
+	矩阵维数 & 迭代次数  & 迭代阈值  & 运行时间（秒）     & 计算误差        \\ \midrule
+	10   & 473   & 1e-10 & 3.62630e-05 & 1.66156e-09 \\
+	100  & 30375 & 1e-10 & 6.37322e-03 & 1.51287e-07 \\
+	1000 & 41218 & 1e-10 & 4.33385e-00 & 1.71437e-01 \\ \bottomrule
+	\end{tabular}
+	\end{table}
 	\subsection{\normf{关键代码}}
+	\begin{lstlisting}[caption=\normf{最速下降法代码}]
+    void steepest_descent(const Eigen::MatrixXd &AMat, const Eigen::VectorXd &bVec, const Eigen::VectorXd &xVec0,
+                          Eigen::VectorXd &xVec, double thresh) {
+        xVec = xVec0;
+        Eigen::VectorXd rVec = bVec - AMat * xVec;
+        while (true) {
+            LOG_VAR(xVec.transpose())
+            Eigen::VectorXd ar = AMat * rVec;
+            double alpha = rVec.dot(rVec) / rVec.dot(ar);
+            xVec = xVec + alpha * rVec;
+            if (alpha * rVec.squaredNorm() < thresh) {
+                break;
+            }
+            rVec = rVec - alpha * ar;
+        }
+    }
+	\end{lstlisting}
 	
 	\newpage
 	\section{\normf{共轭梯度}}
 	\subsection{\normf{算法描述}}
+	对于线性方程组$\boldsymbol{A}\boldsymbol{x}=\boldsymbol{b}$，设：
+	\begin{equation}
+	\boldsymbol{p}_0,\boldsymbol{p}_1,\cdots,\boldsymbol{p}_{n-1}
+	\end{equation}
+	为矩阵$\boldsymbol{A}$的一个共轭向量组，将解向量表示为该向量组的线性组合：
+	\begin{equation}
+	\boldsymbol{x}=\alpha_0\boldsymbol{p}_0+\alpha_1\boldsymbol{p}_1+\cdots+\alpha_{n-1}\boldsymbol{p}_{n-1}
+	\end{equation}
+	则有：
+	\begin{equation}
+	\sum_{k=0}^{n-1}\alpha_k\boldsymbol{A}\boldsymbol{p}_k
+	=\boldsymbol{b}
+	\end{equation}
+	所以求解$\alpha_k$时，可以通过在等值左右同时左乘一个$\boldsymbol{p}_k^\top$，将其他项消除得到：
+	\begin{equation}
+	\alpha_k=\frac{<\boldsymbol{b,\boldsymbol{p}_k}>}{<\boldsymbol{A}\boldsymbol{p}_k,\boldsymbol{p}_k>}
+	\end{equation}
+	得到$\alpha_k$也即求解得到解向量。
+	
+	计算流程为：
+	\begin{enumerate}
+	\item 选定初值$\boldsymbol{x}_0$，则$\boldsymbol{r}_0=\boldsymbol{b}-\boldsymbol{Ax}_0$，令$\boldsymbol{p}_0=\boldsymbol{r}_0$；
+	
+	\item 计算步长：$\alpha_k=<\boldsymbol{r}_k,\boldsymbol{p}_k>/<\boldsymbol{Ap}_k,\boldsymbol{p}_k>$；
+	
+	\item 更新解向量：$\boldsymbol{x}_{k+1}=\boldsymbol{x}_k+\alpha \boldsymbol{p}_k$；
+	
+	\item 更新残差：$\boldsymbol{r}_{k+1}=\boldsymbol{b}-\boldsymbol{Ax}_{k+1}=\boldsymbol{r}_k-\alpha_k\boldsymbol{Ap}_k$；
+	
+	\item 计算：$\beta_k=<\boldsymbol{r}_{k+1},\boldsymbol{r}_{k+1}>/<\boldsymbol{r}_{k},\boldsymbol{r}_{k}>$；
+	
+	\item 更新方向：$\boldsymbol{p}_{k+1}=\boldsymbol{r}_{k+1}+\beta_k\boldsymbol{p}_k$；
+	\end{enumerate}
+	
 	\subsection{\normf{实验结果}}
 	\subsubsection{\normf{小型稀疏矩阵测试}}
 	\subsubsection{\normf{大型稀疏矩阵测试}}
