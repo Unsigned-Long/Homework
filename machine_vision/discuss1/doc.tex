@@ -1,0 +1,210 @@
+\documentclass[12pt, twocolumn]{article}
+
+% 引入相关的包
+\usepackage{amsmath, listings, fontspec, geometry, graphicx, ctex, color, subfigure, amsfonts, amssymb}
+\usepackage{multirow}
+\usepackage[table,xcdraw]{xcolor}
+\usepackage[ruled]{algorithm2e}
+\usepackage[hidelinks]{hyperref}
+
+		\usepackage{graphicx}
+		\usepackage[most]{tcolorbox}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=red,
+	citecolor=red,
+}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{picins}
+
+% 设定页面的尺寸和比例
+\geometry{left = 1.5cm, right = 1.5cm, top = 1.5cm, bottom = 1.5cm}
+
+% 设定两栏之间的间距
+\setlength\columnsep{1cm}
+
+% 设定字体，为代码的插入作准备
+\newfontfamily\ubuntu{Ubuntu Mono}
+\newfontfamily\consolas{Consolas}
+
+% 头部信息
+\title{\normf{编程：观测值逐次更新的扩展卡尔曼滤波器}}
+\author{\normf 姓名：陈烁龙\;\;\;学号：2023202140019\;\;\;学院：测绘学院}
+\date{\normf{\today}}
+
+% 代码块的风格设定
+\lstset{
+	language=C++,
+	basicstyle=\small\ubuntu,
+	keywordstyle=\textbf,
+	stringstyle=\itshape,
+	commentstyle=\itshape,
+	numberstyle=\scriptsize\ubuntu,
+	showstringspaces=false,
+	numbers=left,
+	numbersep=8pt,
+	tabsize=2,
+	frame=single,
+	framerule=1pt,
+	columns=fullflexible,
+	breaklines,
+	frame=shadowbox, 
+	backgroundcolor=\color[rgb]{0.97,0.97,0.97}
+}
+
+% 字体族的定义
+% \fangsong \songti \heiti \kaishu
+\newcommand\normf{\fangsong}
+\newcommand\boldf{\heiti}
+\newcommand\keywords[1]{\boldf{关键词：} \normf #1}
+
+\newcommand\liehat[1]{\left[ #1 \right]_\times}
+\newcommand\lievee[1]{\left[ #1 \right]^\vee}
+\newcommand\liehatvee[1]{\left[ #1 \right]^\vee_\times}
+
+\newcommand\mlcomment[1]{\iffalse #1 \fi}
+%\newcommand\mlcomment[1]{ #1 }
+
+\newcounter{problemname}
+\newenvironment{problem}{\stepcounter{problemname}\par\noindent\normf\textbf{\textcolor[rgb]{1,0,0}{题目\arabic{problemname}.} }}{\leavevmode\\\par}
+\newenvironment{solution}{\par\noindent\normf\textbf{解答: }}{\leavevmode\\\par}
+\newenvironment{note}{\par\noindent\normf\textbf{题目\arabic{problemname}的注记: }}{\leavevmode\\\par}
+
+
+\begin{document}
+	\begin{titlepage}
+	    \centering
+	    \includegraphics[width=0.4\textwidth]{whu_red.png}\par\vspace{1cm}
+	    \vspace{4cm}
+	    {\huge\kaishu “机器视觉”讨论一\par 自动驾驶场景下的三维车辆识别与跟踪 \par}
+	    \vspace{3cm}
+	    {\Large\kaishu 
+	    \begin{center}\begin{tabular}{l}
+	    姓名：陈烁龙\\
+	    学号：\bfseries 2023202140019\\
+	    学院：测绘学院
+	    \end{tabular}\end{center}
+	     \par}
+	    
+	
+	    \vfill
+	
+	% Bottom of the page
+	    {\large\kaishu\bfseries \today\par}
+	\end{titlepage}
+		% 换页
+ 		\thispagestyle{empty}
+		\clearpage
+		
+		% 插入目录、图、表并换页
+		\pagenumbering{roman}
+		\tableofcontents
+		\newpage
+		\listoffigures
+		% 罗马字母形式的页码
+		
+		\clearpage
+		% 从该页开始计数
+		\setcounter{page}{1}
+		% 阿拉伯数字形式的页码
+		\pagenumbering{arabic}
+	
+	\section{\normf{研究背景与现状}}
+	\normf
+	物体检测是一种计算机视觉技术，它可以在图像或视频中识别和定位感兴趣的目标，并给出它们的类别和位置信息。
+	物体检测车载着诸多的应用场景，比如视频监控、自动驾驶、人脸识别等。
+	
+	物体检测可以分为二维物体检测和三维物体检测两种不同形式。二维物体检测是在图像平面上进行的，它可以识别和定位图像中的目标，但无法提供目标的深度信息，如图\ref{fig:物体检测}上图所示。三维物体检测则更进一步，可以在识别和定位目标的同时，提供目标的深度信息，如图\ref{fig:物体检测}下图所示。因此，三维物体检测比二维物体检测更适合需要精确距离信息的应用场景，例如自动驾驶、机器人导航等。但是，三维物体检测需要使用更多的传感器和计算资源，并且通常比二维物体检测更具挑战性。
+	\begin{figure}[h]
+		\centering
+		\includegraphics[width=\linewidth,trim= 0 0 0 125, clip]{img/2d.png}
+		
+		\vspace{2 mm}
+		
+		\includegraphics[width=\linewidth]{img/3d.png}
+		\caption{\normf 二维物体检测(上)和三维物体检测(下)}
+		\label{fig:物体检测}
+	\end{figure}
+	
+	当前三维物体检测主要可以分为以下几类：
+	\begin{enumerate}
+	\item 单目3D目标检测：以单幅图像作为输入，输出物体的三维边界框。由于图像不包含深度信息，因此这个问题是病态的；
+	
+	\item 多视角3D目标检测：主要研究方向是密集算法，这些方法使用稠密的特征向量进行特征融合、目标预测。而其中，基于BEV的方法占据了一大部分。
+	\end{enumerate}
+	单目3D目标检测的典型代表工作有FCOS3D \cite{wang2021fcos3d} (见图\ref{fig:FCOS3D三维物体检测算法})和SMOKE \cite{liu2020smoke}，他们都是基于原来的2D物体检测进行扩展，使用全卷积网络直接回归每个对象的深度。与此不同，OFT (见图\ref{fig:OFT三维物体检测算法})和CaDDN \cite{reading2021categorical} 则将2D影像转到BEV(Bird-eye-view)空间，然后基于探测到的BEV特征进行3D目标探测。还有的一些方法则基于深度估计结果，将2D图像转换为3D伪点云，用LiDAR的那一套来进行3D目标检测。
+
+	\begin{figure}[h]
+		\centering
+		\includegraphics[width=\linewidth,trim= 0 90 0 0, clip]{img/FCOS3D.png}
+		\caption{\normf FCOS3D三维物体检测算法}
+		\label{fig:FCOS3D三维物体检测算法}
+	\end{figure}
+	\begin{figure}[h]
+		\centering
+		\includegraphics[width=\linewidth,trim= 0 0 0 0, clip]{img/OFT.png}
+		\caption{\normf OFT三维物体检测算法}
+		\label{fig:OFT三维物体检测算法}
+	\end{figure}
+	
+	多视角3D目标检测算法中，BEVFormer \cite{li2022bevformer} (见图\ref{fig:BEVFormer三维物体检测算法})采用可变注意力(deformable attention)完成BEV特征生成和稠密时空特征的融合。而BEVDet \cite{huang2021bevdet}，BEVDepth \cite{li2023bevdepth}，BEVStereo \cite{li2023bevstereo}则使用lift-splat操作进行视图转换来实现物体检测。DETR3D \cite{wang2022detr3d} (见图\ref{fig:DETR3D三维物体检测算法})不同于上面的稠密方法，其基于稀疏参考点进行特征采样和融合，大大提高了物体识别的效率。在DETR3D的基础上，Graph DETR3D \cite{chen2022graph} 引入图网络来实现更好的空间特征融合。
+	\begin{figure}[h]
+		\centering
+		\includegraphics[width=\linewidth,trim= 0 120 0 0, clip]{img/BEVFormer.png}
+		\caption{\normf BEVFormer三维物体检测算法}
+		\label{fig:BEVFormer三维物体检测算法}
+	\end{figure}
+	\begin{figure}[h]
+		\centering
+		\includegraphics[width=\linewidth,trim= 0 200 0 0, clip]{img/DETR3D.jpg}
+		\caption{\normf DETR3D三维物体检测算法}
+		\label{fig:DETR3D三维物体检测算法}
+	\end{figure}
+	
+	然而，无论是基于BEV的方法，还是基于稀疏的方法，都存在不足之处。基于BEV的方法图像到BEV的视角转换需要密集的特征采样或重排，这对于低成本的边缘设备部署来说是复杂且计算昂贵的。同时，最大感知范围受BEV特征图大小的限制，难以在感知范围、效率和精度之间进行权衡。另外BEV特征的高度维度被压缩，纹理线索丢失。
+	在基于稀疏的方法中，DETR3D对每一个检测目标框，只有一个3D参考的样本特征，是的可靠性存在不足。SRCN3D \cite{shi2022srcn3d} 采样多视图特征，但效率不高，不能精确对齐来自不同视图的特征点。同时注意到，现有的稀疏三维检测方法没有充分利用丰富的时间信息，与目前最先进的基于BEV的方法相比，在性能上存在很大差距。
+	
+	\section{\normf{方法设计}}
+	\subsection{\normf{方案设想}}
+	基于上文的分析，我们提出了如下的方法，以权衡两类方法的利弊。针对当前基于稀疏的方法中时间信息利用程度不高的现状，我们仍然使用基于稀疏的方法，但是：
+	\begin{enumerate}
+	\item 对于每个3D锚点，我们分配多个4D关键点(多了一个时间维)，然后将其投影到多视图/尺度/时间戳图像特征中以采样相应的特征；(区别于DETR3D：对每一个检测目标框，只有一个3D参考的样本特征)；
+	
+	\item 将不同视角/尺度、不同时间戳和不同关键点的采样特征分层融合，生成高质量的实例特征；
+	
+	\item 引入实例级深度重权重模块，缓解三维到二维投影中的不确定性问题。
+	\end{enumerate}
+	
+	该方法由于是基于稀疏的方法，能够高效实现3D检测。同时使用多个4D关键点而非单个3D关键点，关键点数目更多，维度信息更大，能够有效实现3D检测。另外，该方法无需依赖密集的视图变换和全局关注，计算量小，对设备部署更加友好。
+	
+	\subsection{\normf{关键技术和可行性}}
+	对于4D特征点的生成：为获取具有代表性的实例特征，最关键的环节在于特征点的选取。为此，对于每个锚点，可以将4D关键点分为固定特征点和可学习特征点。将固定的特征点直接放在锚盒的立体中心和六面中心上，可学习的特征点随着不同的实例特征而变化，从而可以运用神经网络找到每个实例的最具代表性的特征。
+	
+	在稀疏采样方面，为充分利用特征信息，生成高质量的实例特征，将采样特征进行分层融合。具体来说，对于每个特征点，首先用特征点生成中预测的权重融合不同视图和尺度的特征。时间戳维度在序列中的线性层融合。对于每个锚点实例，融合多点特征以生成实例特征。
+
+	另外，通过引入一个深度重权重，来缓解在3D到2D的变换中不同的3D点可以对应于相同的2D坐标这个问题。对于每个3D锚点，可以计算它在不同视图下的投影深度，并根据深度的分布和方差来给每个视图分配一个权重，用于重新加权实例特征。
+
+	\section{\normf{结论与展望}}
+	由于该方法是基于稀疏的方法，所以相较于稠密BEV方法，更加高效。同时，在构建特征点的时候，考虑了时间信息，所以精度更高。最后，引入的引入了实例层次的深度重权重模块，能够缓解三维到二维投影中的不确定性问题。
+
+	当然，该方案也存在一些待改进的地方。比如，可在深度重加权模块里面使用多视角视图中的双目视图信息，进一步改善深度信息的可靠性。在训练模型中，将相机的参数也纳入进来，来改善3D物体识别的泛化能力。
+	
+	\bibliographystyle{IEEEtran}
+	\bibliography{reference}
+	
+	\section*{ACKNOWLEDGMENT}
+	\begin{tcolorbox}[colback=white,colframe=white!70!black,title={\bfseries Author Information}]
+	\par\noindent
+		\parbox[t]{\linewidth}{
+	 \noindent\parpic{\includegraphics[height=2in,width=1in,clip,keepaspectratio]{ShuolongChen_grey.jpg}}
+	 \noindent{\bfseries Shuolong Chen}\emph{
+	 received the B.S. degree in geodesy and geomatics engineering from Wuhan University, Wuhan China, in 2023.
+	 He is currently a master candidate at the school of Geodesy and Geomatics, Wuhan University. His area of research currently focuses on integrated navigation systems and multi-sensor fusion.
+	 Contact him via e-mail: shlchen@whu.edu.cn.
+	 }}
+	\end{tcolorbox}
+		
+		
+\end{document}
+
