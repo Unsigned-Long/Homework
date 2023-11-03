@@ -1,4 +1,4 @@
-\documentclass[12pt, onecolumn]{article}
+\documentclass[12pt, twocolumn]{article}
 
 % 引入相关的包
 \usepackage{amsmath, listings, fontspec, geometry, graphicx, ctex, color, subfigure, amsfonts, amssymb}
@@ -57,7 +57,7 @@
 % \fangsong \songti \heiti \kaishu
 \newcommand\normf{\fangsong}
 \newcommand\boldf{\heiti}
-\newcommand\keywords[1]{\boldf{关键词：} \normf #1}
+\newcommand\keywords[1]{\bfseries{关键词：} \normf #1}
 
 \newcommand\liehat[1]{\left[ #1 \right]_\times}
 \newcommand\lievee[1]{\left[ #1 \right]^\vee}
@@ -77,7 +77,7 @@
 	    \centering
 	    \includegraphics[width=0.4\textwidth]{whu_red.png}\par\vspace{1cm}
 	    \vspace{4cm}
-	    {\huge\kaishu “最优估计”编程作业\par 观测值逐次更新的扩展卡尔曼滤波器 \par}
+	    {\huge\kaishu\bfseries Marginalization\par in Continuous-time-based Estimators\par 基于连续时间的状态估计器中的边缘化 \par}
 	    \vspace{3cm}
 	    {\Large\kaishu 
 	    \begin{center}\begin{tabular}{l}
@@ -102,8 +102,8 @@
 		\tableofcontents
 		\newpage
 		\listoffigures
-		\newpage
-		\listoftables
+%		\newpage
+%		\listoftables
 		% 罗马字母形式的页码
 		
 		\clearpage
@@ -112,354 +112,32 @@
 		% 阿拉伯数字形式的页码
 		\pagenumbering{arabic}
 	
-	\section{\normf{问题分析}}
 	
-	\normf
-	\subsection{\normf 状态转移方程}
-	设$t$时刻的状态向量为$\boldsymbol{X}(t)=\left( x(t),y(t),v_x(t),v_y(t)\right) ^\top$，则根据题意，得到该系统的连续时间微分方差为
-	：
-	\begin{equation}
-	\dot{\boldsymbol{X}}(t)=\begin{pmatrix}
-	\dot{x}(t)\\\dot{y}(t)\\\dot{v}_x(t)\\\dot{v}_y(t)
-	\end{pmatrix}=\begin{pmatrix}
-	v_x(t)\\
-	v_y(t)\\
-	-k_x v^2_x(t)\\
-	k_y v^2_y(t)
-	\end{pmatrix}+\begin{pmatrix}
-	0\\0\\0\\-1
-	\end{pmatrix}\begin{pmatrix}
-	g
-	\end{pmatrix}+\begin{pmatrix}
-	0&0\\
-	0&0\\
-	1&0\\
-	0&1
-	\end{pmatrix}\begin{pmatrix}
-	e_x(t)\\
-	e_y(t)
-	\end{pmatrix}
-	\end{equation}
-	将其记为：
-	\begin{equation}
-	\dot{\boldsymbol{X}}(t)=\boldsymbol{F}(t)+\boldsymbol{B}\cdot\boldsymbol{u}+\boldsymbol{C}\cdot\boldsymbol{e}(t)
-	\end{equation}
-	线性化得到：
-	\begin{equation}
-	\dot{\boldsymbol{X}}(t)=\boldsymbol{F^*}+\boldsymbol{A}\cdot\left( \boldsymbol{X}(t)-\boldsymbol{X^*}\right) +\boldsymbol{B}\cdot\boldsymbol{u}+\boldsymbol{C}\cdot\boldsymbol{e(t)}
-	\end{equation}
-	其中：
-	\begin{equation}
-	\boldsymbol{F^*}=\begin{pmatrix}
-		v_x^*\\
-		v_y^*\\
-		-k_x {v^*_x}^2\\
-		k_y {v^*_y}^2
-		\end{pmatrix}
-	\qquad
-	\boldsymbol{A}=\begin{pmatrix}
-		0&0&1&0\\
-		0&0&0&1\\
-		0&0&-2 k_x v_x^*&0\\
-		0&0&0&2 k_y v_y^*
-		\end{pmatrix}
-		\qquad
-		\boldsymbol{X^*}=\begin{pmatrix}
-			x^*\\y^*\\v_x^*\\v_y^*
-			\end{pmatrix}
-	\end{equation}
-	进一步化简得到：
-	\begin{equation}
-	\begin{aligned}
-	\dot{\boldsymbol{X}}(t)&=\boldsymbol{A}\cdot\boldsymbol{X}(t)
-		+\left( \boldsymbol{F^*}-\boldsymbol{A}\cdot\boldsymbol{X^*}+\boldsymbol{B}\cdot\boldsymbol{u}\right) 
-		+\boldsymbol{C}\cdot\boldsymbol{e}(t)
-		\\
-		&=\boldsymbol{A}\cdot\boldsymbol{X}(t)
-				+\boldsymbol{G}
-				+\boldsymbol{C}\cdot\boldsymbol{e}(t)
-	\end{aligned}
-	\end{equation}
-	对其进行离散化。由于$\boldsymbol{A}$矩阵与时间无关，所以状态转移矩阵为：
-	\begin{equation}
-	\boldsymbol{\Phi}(t,\tau)=\boldsymbol{I}+\boldsymbol{A}\cdot(t-\tau)=
-	\begin{pmatrix}
-	1&0&(t-\tau)&0\\
-	0&1&0&(t-\tau)\\
-	0&0&1-2 k_x v_x^*\times(t-\tau)&0\\
-	0&0&0&1+2 k_y v_y^*\times(t-\tau)\\
-	\end{pmatrix}
-	\end{equation}
-	最终，得到离散化后的状态转移方程：
-	\begin{equation}
-	\begin{aligned}
-	\boldsymbol{X}(t_k)&=\boldsymbol{\Phi}(t_k,t_{k-1})\cdot\boldsymbol{X}(t_{k-1})+\int_{t_{k-1}}^{t_k}\boldsymbol{\Phi}(t_k,\tau)\cdot\boldsymbol{G}\cdot d\tau
-		+\int_{t_{k-1}}^{t_k}\boldsymbol{\Phi}(t_k,\tau)\cdot\boldsymbol{C}\cdot\boldsymbol{e}(\tau)\cdot d\tau
-		\\&=\boldsymbol{\Phi}(t_k,t_{k-1})\cdot\boldsymbol{X}(t_{k-1})
-		+\boldsymbol{c}(t_k,t_{k-1})
-		+\boldsymbol{w}(t_{k-1})
-	\end{aligned}
-	\end{equation}
-	令$\Delta t=t_k-t_{k-1}$，则其中：
-	\begin{equation}
-	\boldsymbol{c}(t_k,t_{k-1})=	\begin{pmatrix}
-		\Delta t&0&(\Delta t)^2/2&0\\
-		0&\Delta t&0&(\Delta t)^2/2\\
-		0&0&\Delta t-k_x v_x^*\times(\Delta t)^2&0\\
-		0&0&0&\Delta t+k_y v_y^*\times(\Delta t)^2\\
-		\end{pmatrix}\begin{pmatrix}
-		0\\0\\
-		k_x{v_x^*}^2\\
-		-k_y{v_y^*}^2-g
-		\end{pmatrix}
-	\end{equation}
-	$\boldsymbol{w}(k-1)$的方差$\boldsymbol{D}_{w}(k-1)=\int_{t_{k-1}}^{t_k}\boldsymbol{\Phi}(t_k,\tau)\cdot\boldsymbol{C}\cdot\boldsymbol{D}_{e}(\tau)\cdot\boldsymbol{C}^\top\cdot\boldsymbol{\Phi}^\top(t_k,\tau)\cdot d\tau$为：
-	\begin{equation}
-	\begin{pmatrix}
-	\frac{(\Delta t)^3}{3}\sigma_{e_x}^2
-	&0&
-	\left( \frac{1}{2}(\Delta t)^2-\frac{2}{3}k_xv_x^*(\Delta t)^3\right)\sigma_{e_x}^2 
-	&0\\
-	0&
-	\frac{(\Delta t)^3}{3}\sigma_{e_y}^2
-	&0&
-	\left( \frac{1}{2}(\Delta t)^2+\frac{2}{3}k_yv_y^*(\Delta t)^3\right)\sigma_{e_y}^2 
-	\\
-	\cdots&\cdots&
-	\left(\Delta t-2k_xv_x^*(\Delta t)^2+\frac{4}{3}(k_xv^*_x)^2(\Delta t)^3 \right) \sigma_{e_x}^2
-	&0
-	\\
-	\cdots&\cdots&\cdots&
-	\left(\Delta t+2k_yv_y^*(\Delta t)^2+\frac{4}{3}(k_yv^*_y)^2(\Delta t)^3 \right) \sigma_{e_y}^2
-	\end{pmatrix}
-	\end{equation}
-	\subsection{\normf 测量更新方程}
-	令$\boldsymbol{Z}(t_k)=\left( r(t_k),\alpha(t_k)\right) ^\top$，则有：
-	\begin{equation}
-	\boldsymbol{Z}(t_k)=\begin{pmatrix}
-	r(t_k)\\\alpha(t_k)
-	\end{pmatrix}=\begin{pmatrix}
-	\sqrt{x^2(t_k)+y^2(t_k)}\\
-	\arctan\begin{aligned}
-	\frac{x(t_k)}{y(t_k)}
-	\end{aligned}
-	\end{pmatrix}+
-	\begin{pmatrix}
-	\Delta_r(t_k)\\\Delta_\alpha(t_k)
-	\end{pmatrix}
-	\end{equation}
-	将其记为：
-	\begin{equation}
-	\boldsymbol{Z}(t_k)=\boldsymbol{L}(t_k)+\boldsymbol{\Delta}_z
-	\end{equation}
-	线性化后得到：
-	\begin{equation}
-	\boldsymbol{Z}(t_k)=\boldsymbol{L^*}+\boldsymbol{H}\cdot\left(
-	\boldsymbol{X}(t_k)-\boldsymbol{X^*}
-	\right) +\boldsymbol{\Delta}_z
-	\end{equation}
-	其中：
-	\begin{equation}
-	\boldsymbol{L^*}=\begin{pmatrix}
-		\sqrt{(x^*)^2+(y^*)^2}\\
-		\arctan\begin{aligned}
-		\frac{x^*}{y^*}
-		\end{aligned}
-		\end{pmatrix}
-		\qquad
-		\boldsymbol{H}=\begin{pmatrix}
-			\begin{aligned}
-			\frac{x^*}{\sqrt{(x^*)^2+(y^*)^2}}
-			\end{aligned}
-		&
-			\begin{aligned}
-			\frac{y^*}{\sqrt{(x^*)^2+(y^*)^2}}
-			\end{aligned}
-		&0&0\\
-		\begin{aligned}
-		\frac{1}{1+(x^*/y^*)^2}\times\frac{1}{y^*}
-		\end{aligned}
-		&
-		\begin{aligned}
-		\frac{1}{1+(x^*/y^*)^2}\times-\frac{x^*}{(y^*)^2}
-		\end{aligned}
-		&0&0
-		\end{pmatrix}
-	\end{equation}
-	整理得到：
-	\begin{equation}
-	\boldsymbol{Z}(t_k)-\boldsymbol{L^*}+\boldsymbol{H}\cdot\boldsymbol{X^*}
-	=\boldsymbol{H}\cdot\boldsymbol{X}(t_k)	+\boldsymbol{\Delta}_z
-	\end{equation}
-	
-	\subsection{\normf 扩展卡尔曼滤波}
-	\subsubsection{\normf 状态预测和方差传播}
-	已知$t_{k-1}$时刻的状态$\boldsymbol{X}(t_{k-1})$及其方差$\boldsymbol{D}_{\boldsymbol{X}}(t_{k-1})$，首先通过状态转移方程进行状态预测和方差传播：
-		\begin{equation}
-		\begin{cases}
-		\begin{aligned}
-		\boldsymbol{X}(t_k,t_{k-1})&=
-			\boldsymbol{\Phi}(t_k,t_{k-1})\cdot\boldsymbol{X}(t_{k-1})
-			+\boldsymbol{c}(t_k,t_{k-1})
-			\\
-			\boldsymbol{D}_{\boldsymbol{X}}(t_k,t_{k-1})&=\boldsymbol{\Phi}(t_k,t_{k-1})\cdot\boldsymbol{D}_{\boldsymbol{X}}(t_k)\cdot\boldsymbol{\Phi}^\top(t_k,t_{k-1})+\boldsymbol{D}_{w}(t_{k-1})
-		\end{aligned}
-		\end{cases}
-		\end{equation}
+	\begin{abstract}
+		\normf\bfseries
+		近几年来，同时定位与地图构建(Simultaneous Localization And Mapping, SLAM)技术已经较为成熟，且被广泛应用于诸如自动驾驶、机器人领域中，来提供连续的位置服务和精确、一致的先验地图。出于实时性的要求，SLAM算法需要在优化精度和优化效率之间平衡。目前比较主流的方法是采用滑窗(Sliding Window)优化加边缘化(Marginalization)的策略，能够在保证实时性的同时，尽可能地减少局部优化\footnote{\normf 由于滑窗优化本质上是一中局部优化而非全局批处理优化，得到的结果往往是全局次优的，而不是全局最优。}带来的精度损失。
 		
-	\subsubsection{\normf 观测值逐次更新}
+		目前绝大多的SLAM算法在进行优化的时候都针对的是离散位姿状态序列，是一种离散时间(Discrete Time，DT)估计方法。而相对应的连续时间(Continuous Time，CT)估计方法则使用时间域上的连续函数(比如B样条函数)表达位姿轨迹，优化的是连续函数的参量。相比于DT估计方法，CT估计方法在考虑了运动连续性的同时，能够更有利于异步、高频多源传感器的融合。CT方法目前在SLAM技术上应用的不是很多，主要是因为其优化量较大，效率较低。
+		
+		本文聚焦于基于CT的估计器中的边缘化问题，进行CT估计器中边缘化算法的探究、实现和测试\footnote{\normf 由于本人的研究方向是连续时间相关的SLAM技术，所以在本次报告考察中，在不偏离课程主题的同时，对这一问题进行深入的探究。}。
+	\end{abstract}
 	
-	观测值逐次对预测状态进行更新时，首先计算残差：
-	\begin{equation}
-	\boldsymbol{V}_i(t_k)=\boldsymbol{Z}_i(t_k)-\boldsymbol{L}_i(t_k)
-	\end{equation}
-	需要注意的是，下一次的残差计算需要使用上一次的估计结果。而后计算卡尔曼增益：
-	\begin{equation}
-	\boldsymbol{K}_i=\boldsymbol{D}_{\boldsymbol{X}}(t_{k},t_{k-1})\cdot\boldsymbol{h}_i^\top\left( \boldsymbol{h}_i\cdot\boldsymbol{D}_{\boldsymbol{X}}(t_k,t_{k-1})\cdot\boldsymbol{h}_i^\top+\boldsymbol{\Delta}_z^i\right) ^{-1}
-	\end{equation}
-	需要注意的是，下一次的卡尔曼增益矩阵的计算需要使用上一次的状态方差。最后计算状态更新后的值：
-	\begin{equation}
-	\begin{cases}
-	\begin{aligned}
-	\boldsymbol{X}(t_k)&=\boldsymbol{X}(t_k,t_{k-1})+\boldsymbol{K}_i\cdot
-		\boldsymbol{V}_i(t_k)
-		\\
-	\boldsymbol{D}_{\boldsymbol{X}}(t_k)&=\left( \boldsymbol{I}-\boldsymbol{K}_i\cdot\boldsymbol{h}_i\right)\cdot\boldsymbol{D}_{\boldsymbol{X}}(t_k,t_{k-1}) 
-	\end{aligned}
-	\end{cases}
-	\end{equation}
-	直至当前所有观测值更新完毕，进入下一时刻进行滤波。
+	\noindent\keywords{同时定位与地图构建，边缘化，连续时间估计方法}
 	
-	\subsubsection{\normf 观测值整体更新}
-	观测值整体对预测状态进行更新时，残差为：
-	\begin{equation}
-	\boldsymbol{V}(t_k)=\boldsymbol{Z}(t_k)-\boldsymbol{L}(t_k)
-	\end{equation}
-	卡尔曼增益为：
-	\begin{equation}
-	\boldsymbol{K}=\boldsymbol{D}_{\boldsymbol{X}}(t_{k},t_{k-1})\cdot\boldsymbol{H}^\top\left( \boldsymbol{H}\cdot\boldsymbol{D}_{\boldsymbol{X}}(t_k,t_{k-1})\cdot\boldsymbol{H}^\top+\boldsymbol{\Delta}_z\right) ^{-1}
-	\end{equation}
-	最终有：
-	\begin{equation}
-	\begin{cases}
-	\begin{aligned}
-	\boldsymbol{X}(t_k)&=\boldsymbol{X}(t_k,t_{k-1})+\boldsymbol{K}\cdot
-		\boldsymbol{V}(t_k)
-		\\
-	\boldsymbol{D}_{\boldsymbol{X}}(t_k)&=\left( \boldsymbol{I}-\boldsymbol{K}\cdot\boldsymbol{H}\right)\cdot\boldsymbol{D}_{\boldsymbol{X}}(t_k,t_{k-1}) 
-	\end{aligned}
-	\end{cases}
-	\end{equation}
+	\section{\normf{概述}}
+	\normf\bfseries
+	
+	\subsection{\normf 边缘化}
+	同时定位与地图构建(Simultaneous Localization and Mapping，SLAM)指从未知环境的未知地点出发，在运动过程中通过重复观测到的地图特征定位自身位置和姿态，再根据自身位置增量式的构建地图，从而达到同时定位和地图构建的目的。在一个SLAM场景中，随着时间的推移，系统中的状态越来越多。如果在估计器中考虑所有的状态，会导致优化问题膨胀，进而降低估计器的优化效率，使得SLAM算法不能实时运行。
+	
+	在现阶段的SLAM技术中，一种简单有效的控制优化规模的方法，是仅保留离当前时刻最近的N个关键帧，去掉时间上更早的关键帧。也即，将优化规模固定在一个时间窗口内，离开这个窗口的则被丢弃。这种方法称为滑动窗口法\cite{高翔2017视觉}。
 	
 	\newpage
-	\section{\normf{实验结果}}
-	\subsection{\normf 观测值逐次更新}
-	\subsubsection{\normf 先距离量测，后角度量测}
-	\subsubsection{\normf 先角度量测，后距离量测}
-	\subsection{\normf 观测值整体更新}
-	
-	\newpage
-	\section{\normf{附录}}
-	\subsection{\normf 运行环境}
-	表格\ref{tab:代码运行环境}显示了本次编程测试的运行环境。本次代码使用\emph{CPP 17}实现，使用到了线性代数库\emph{Eigen}和数据序列化库\emph{Cereal}。代码虽然在\emph{Ubuntu}上实现， 但由于是\emph{Cmake}架构的项目，所以具有跨平台的特征，即可以在\emph{Windows}平台和\emph{Mac}上编译运行。
-	
-	% Please add the following required packages to your document preamble:
-	% \usepackage{multirow}
-	\begin{table}[h]
-	\centering
-	\caption{\normf 代码运行环境}
-	\label{tab:代码运行环境}
-	\vspace{5pt}
-	\begin{tabular}{ccc|cl}
-	\toprule
-	\multicolumn{1}{c|}{\multirow{2}{*}{Config.}} & OS name & Ubuntu 20.04.6 LTS & Processor              & 12th Gen Intel® Core™ i9-12900H × 20              \\ \cmidrule{2-5} 
-	\multicolumn{1}{c|}{}                         & OS Type & 64-bit             & Graphics               & Mesa Intel® Graphics (ADL GT2)                    \\ \midrule[1pt]\midrule[1pt]
-	\multicolumn{3}{c|}{Library}                                                 & \multicolumn{2}{c}{Link}                                                   \\ \midrule
-	\multicolumn{3}{c|}{Eigen3}                                                  & \multicolumn{2}{c}{https://eigen.tuxfamily.org/index.php?title=Main\_Page} \\
-	\multicolumn{3}{c|}{Cereal}                                                  & \multicolumn{2}{c}{https://github.com/USCiLab/cereal.git}                  \\ \bottomrule
-	\end{tabular}
-	\end{table}
-	
-	\subsection{\normf 关键代码}
-	由于空间有限，所以在本文档中只贴了关键代码片段，也即$(i)$ 状态预测，$(ii)$ 全局量测更新，$(iii)$ 逐次量测更新(先距离后角度)，$(iv)$ 逐次量测更新(先角度后距离)。其他代码，诸如“状态”数据结构、“观测值”数据结构、“滤波器”类结构体等，在此文档中不在给出，具体细节可参考项目里面的代码文件。
-	\begin{lstlisting}[caption={\normf “状态预测”算法实现}]
-	    KalmanFilter &KalmanFilter::StatePredict(double t) {
-	        // state transition
-	        Eigen::Matrix4d phiMat = StateTransitionMat(estState, t - estState.timestamp);
-	        Eigen::Vector4d conVec = ControlInputVec(estState, t - estState.timestamp);
-	        preState.state = phiMat * estState.state + conVec;
-	
-	        // variance propagation
-	        Eigen::Matrix4d errorMat = ErrorTransitionMat(estState, t - estState.timestamp);
-	        preState.var = phiMat * estState.var * phiMat.transpose() + errorMat;
-	        return *this;
-	    }
-	\end{lstlisting}
-		
-	\begin{lstlisting}[caption={\normf “全局量测更新”算法实现}]
-	    KalmanFilter &KalmanFilter::MesUpdateGlobal(const Measure &mes) {
-	        Eigen::Vector2d v = mes.MesVec() - MesPrediction(preState).MesVec();
-	        Eigen::Matrix<double, 2, 4> h = MeasurementMat(preState);
-	        Eigen::Matrix<double, 4, 2> k = preState.var * h.transpose() *
-	                                        (h * preState.var * h.transpose() + mes.VarMat()).inverse();
-	        estState.state = preState.state + k * v;
-	        estState.var = (Eigen::Matrix4d::Identity() - k * h) * preState.var;
-	        return *this;
-	    }
-	\end{lstlisting}
-		
-	\begin{lstlisting}[caption={\normf “逐次量测更新(先距离后角度)”算法实现}]
-	    KalmanFilter &KalmanFilter::MesUpdateSequentially1(const Measure &mes) {
-	        // update based on range measurement
-	        {
-	            double v1 = mes.range - MesPrediction(preState).range;
-	            Eigen::Matrix<double, 1, 4> h1 = MeasurementMat(preState).row(0);
-	            Eigen::Vector4d k1 = preState.var * h1.transpose()
-	                                 / ((h1 * preState.var * h1.transpose())(0, 0) + mes.sigma_r * mes.sigma_r);
-	            preState.state = preState.state + k1 * v1;
-	            preState.var = (Eigen::Matrix4d::Identity() - k1 * h1) * preState.var;
-	        }
-	        // update based on alpha measurement
-	        {
-	            double v2 = mes.alpha - MesPrediction(preState).alpha;
-	            Eigen::Matrix<double, 1, 4> h2 = MeasurementMat(preState).row(1);
-	            Eigen::Vector4d k2 = preState.var * h2.transpose()
-	                                 / ((h2 * preState.var * h2.transpose())(0, 0) + mes.sigma_a * mes.sigma_a);
-	            preState.state = preState.state + k2 * v2;
-	            preState.var = (Eigen::Matrix4d::Identity() - k2 * h2) * preState.var;
-	        }
-	        estState = preState;
-	        return *this;
-	    }
-	\end{lstlisting}
-	
-	\begin{lstlisting}[caption={\normf “逐次量测更新(先角度后距离)”算法实现}]
-	    KalmanFilter &KalmanFilter::MesUpdateSequentially2(const Measure &mes) {
-	        // update based on alpha measurement
-	        {
-	            double v2 = mes.alpha - MesPrediction(preState).alpha;
-	            Eigen::Matrix<double, 1, 4> h2 = MeasurementMat(preState).row(1);
-	            Eigen::Vector4d k2 = preState.var * h2.transpose()
-	                                 / ((h2 * preState.var * h2.transpose())(0, 0) + mes.sigma_a * mes.sigma_a);
-	            preState.state = preState.state + k2 * v2;
-	            preState.var = (Eigen::Matrix4d::Identity() - k2 * h2) * preState.var;
-	        }
-	        // update based on range measurement
-	        {
-	            double v1 = mes.range - MesPrediction(preState).range;
-	            Eigen::Matrix<double, 1, 4> h1 = MeasurementMat(preState).row(0);
-	            Eigen::Vector4d k1 = preState.var * h1.transpose()
-	                                 / ((h1 * preState.var * h1.transpose())(0, 0) + mes.sigma_r * mes.sigma_r);
-	            preState.state = preState.state + k1 * v1;
-	            preState.var = (Eigen::Matrix4d::Identity() - k1 * h1) * preState.var;
-	        }
-	        estState = preState;
-	        return *this;
-	    }
-	\end{lstlisting}
+	\bibliographystyle{IEEEtran}
+	\bibliography{reference}
 		
 	\newpage
-	\section{ACKNOWLEDGMENT}
+	\section*{ACKNOWLEDGMENT}
 	\begin{tcolorbox}[colback=white,colframe=white!70!black,title={\bfseries Author Information}]
 	\par\noindent
 		\parbox[t]{\linewidth}{
@@ -473,4 +151,3 @@
 		
 		
 \end{document}
-

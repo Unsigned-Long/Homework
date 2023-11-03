@@ -1,0 +1,254 @@
+\documentclass[12pt, onecolumn]{article}
+
+% 引入相关的包
+\usepackage{amsmath, listings, fontspec, geometry, graphicx, ctex, color, subfigure, amsfonts, amssymb}
+\usepackage{multirow}
+\usepackage[table,xcdraw]{xcolor}
+\usepackage[ruled]{algorithm2e}
+\usepackage[hidelinks]{hyperref}
+
+		\usepackage{graphicx}
+		\usepackage[most]{tcolorbox}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=red,
+	citecolor=red,
+}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{picins}
+
+% 设定页面的尺寸和比例
+\geometry{left = 1.5cm, right = 1.5cm, top = 1.5cm, bottom = 1.5cm}
+
+% 设定两栏之间的间距
+\setlength\columnsep{1cm}
+
+% 设定字体，为代码的插入作准备
+\newfontfamily\ubuntu{Ubuntu Mono}
+\newfontfamily\consolas{Consolas}
+
+% 头部信息
+\title{\normf{编程：观测值逐次更新的扩展卡尔曼滤波器}}
+\author{\normf 姓名：陈烁龙\;\;\;学号：2023202140019\;\;\;学院：测绘学院}
+\date{\normf{\today}}
+
+% 代码块的风格设定
+\lstset{
+	language=C++,
+	basicstyle=\small\ubuntu,
+	keywordstyle=\textbf,
+	stringstyle=\itshape,
+	commentstyle=\itshape,
+	numberstyle=\scriptsize\ubuntu,
+	showstringspaces=false,
+	numbers=left,
+	numbersep=8pt,
+	tabsize=2,
+	frame=single,
+	framerule=1pt,
+	columns=fullflexible,
+	breaklines,
+	frame=shadowbox, 
+	backgroundcolor=\color[rgb]{0.97,0.97,0.97}
+}
+
+% 字体族的定义
+% \fangsong \songti \heiti \kaishu
+\newcommand\normf{\fangsong}
+\newcommand\boldf{\heiti}
+\newcommand\keywords[1]{\bfseries{关键词：} \normf #1}
+
+\newcommand\liehat[1]{\left[ #1 \right]_\times}
+\newcommand\lievee[1]{\left[ #1 \right]^\vee}
+\newcommand\liehatvee[1]{\left[ #1 \right]^\vee_\times}
+
+\newcommand\mlcomment[1]{\iffalse #1 \fi}
+%\newcommand\mlcomment[1]{ #1 }
+
+\newcounter{problemname}
+\newenvironment{problem}{\stepcounter{problemname}\par\noindent\normf\textbf{\textcolor[rgb]{1,0,0}{题目\arabic{problemname}.} }}{\leavevmode\\\par}
+\newenvironment{solution}{\par\noindent\normf\textbf{解答: }}{\leavevmode\\\par}
+\newenvironment{note}{\par\noindent\normf\textbf{题目\arabic{problemname}的注记: }}{\leavevmode\\\par}
+
+
+\begin{document}
+	\begin{titlepage}
+	    \centering
+	    \includegraphics[width=0.4\textwidth]{whu_red.png}\par\vspace{1cm}
+	    \vspace{4cm}
+	    {\huge\kaishu\bfseries “机器视觉”编程作业\par 图像去畸变 \par}
+	    \vspace{3cm}
+	    {\Large\kaishu 
+	    \begin{center}\begin{tabular}{l}
+	    姓名：陈烁龙\\
+	    学号：\bfseries 2023202140019\\
+	    学院：测绘学院
+	    \end{tabular}\end{center}
+	     \par}
+	    
+	
+	    \vfill
+	
+	% Bottom of the page
+	    {\large\kaishu\bfseries \today\par}
+	\end{titlepage}
+		% 换页
+ 		\thispagestyle{empty}
+		\clearpage
+		
+		% 插入目录、图、表并换页
+		\pagenumbering{roman}
+		\tableofcontents
+		\newpage
+		\listoffigures
+%		\newpage
+%		\listoftables
+		% 罗马字母形式的页码
+		
+		\clearpage
+		% 从该页开始计数
+		\setcounter{page}{1}
+		% 阿拉伯数字形式的页码
+		\pagenumbering{arabic}
+	
+	
+	
+	\section{\normf{角点检测}}
+	\normf\bfseries
+	
+	\subsection{\normf{相机模型}}
+	设提取到的角点为序列$\mathcal{P}=\{\boldsymbol{p}_{i,j}\mid i\in[0,r-1],j\in[0,c-1]\}$。在棋盘格上设置世界坐标系$\{w\}$，其$x$轴向下，$y$轴向右，$z$轴向外，坐标原点与左上角的角点重合。由于角点在同一平面上，且间距相等，有：
+	\begin{equation}
+	{^w\boldsymbol{p}_{i,j}}(z)=0
+	\end{equation}
+	和
+	\begin{equation}
+	{^w\boldsymbol{p}_{i+1,j+1}}={^w\boldsymbol{p}_{i,j}}+\begin{pmatrix}
+	l&l&0
+	\end{pmatrix}^\top
+	\end{equation}
+	其中$l$为相邻两个角点之间的间距(横向和纵向间距相等)。
+	
+	设相机坐标系为$\{c\}$，则角点${\boldsymbol{p}_{i,j}}$在相机坐标系下的位置为：
+	\begin{equation}
+	{^c\boldsymbol{p}_{i,j}}={^{c}_{w}\boldsymbol{R}}\cdot{^w\boldsymbol{p}_{i,j}}+{^c\boldsymbol{p}_{w}}
+	\end{equation}
+	将该点规化到归一化像素平面上，得到：
+	\begin{equation}
+	\begin{pmatrix}
+	x_{i,j}\\y_{i,j}
+	\end{pmatrix}=\begin{pmatrix}
+	\begin{aligned}
+	\frac{{^c\boldsymbol{p}_{i,j}}(x)}{{^c\boldsymbol{p}_{i,j}}(z)}
+	\end{aligned}
+	&
+	\begin{aligned}		\frac{{^c\boldsymbol{p}_{i,j}}(y)}{{^c\boldsymbol{p}_{i,j}}(z)}
+	\end{aligned}
+	\end{pmatrix}^\top
+	\end{equation}
+	进行加畸变操作，得到：
+	\begin{equation}
+	\begin{cases}
+	\begin{aligned}
+	x_{i,j}^d&=x_{i,j}\times\left( 1+k_1\times r_{i,j}^2+k_2\times r_{i,j}^4\right) 
+	\\
+	y_{i,j}^d&=y_{i,j}\times\left( 1+k_1\times r_{i,j}^2+k_2\times r_{i,j}^4\right) 
+	\end{aligned}
+	\end{cases}
+	\end{equation}
+	其中$r_{i,j}=\sqrt{x_{i,j}^2+y_{i,j}^2}$，$k_1$和$k_2$为径向畸变参数。
+	最后投到像平面上，有：
+	\begin{equation}
+	\begin{pmatrix}
+	u_{i,j}\\v_{i,j}\\1
+	\end{pmatrix}=
+	\begin{pmatrix}
+	f_x&0&c_x\\
+	0&f_y&c_y\\
+	0&0&1
+	\end{pmatrix}
+	\begin{pmatrix}
+		x_{i,j}^d\\y_{i,j}^d\\1
+	\end{pmatrix}
+	\end{equation}
+	
+	\subsection{\normf{参数求解}}
+	在不考虑畸变模型的情况下，有：
+	\begin{equation}
+	\begin{pmatrix}
+	u_{i,j}\\v_{i,j}\\1
+	\end{pmatrix}=\frac{1}{{^c\boldsymbol{p}_{i,j}}(z)}\cdot
+	\begin{pmatrix}
+	f_x&0&c_x\\
+	0&f_y&c_y\\
+	0&0&1
+	\end{pmatrix}\begin{pmatrix}
+	{^{c}_{w}\boldsymbol{R}(1)}&
+	{^{c}_{w}\boldsymbol{R}(2)}&
+	{^c\boldsymbol{p}_{w}}
+	\end{pmatrix}
+	\begin{pmatrix}
+	{^w\boldsymbol{p}_{i,j}}(x)\\{^w\boldsymbol{p}_{i,j}}(y)\\1
+	\end{pmatrix}
+	\end{equation}
+	在不考虑畸变模型的情况下，有：
+	\begin{equation}
+	\begin{pmatrix}
+	u_{i,j}-c_x\\v_{i,j}-c_y\\1
+	\end{pmatrix}=\frac{f}{{^c\boldsymbol{p}_{i,j}}(z)}\cdot
+	\begin{pmatrix}
+	{^{c}_{w}\boldsymbol{R}(1)}&
+	{^{c}_{w}\boldsymbol{R}(2)}&
+	{^c\boldsymbol{p}_{w}}
+	\end{pmatrix}
+	\begin{pmatrix}
+	{^w\boldsymbol{p}_{i,j}}(x)\\{^w\boldsymbol{p}_{i,j}}(y)\\1
+	\end{pmatrix}
+	\end{equation}
+	将上式中的映射矩阵记为：
+	\begin{equation}
+	\begin{pmatrix}
+		{^{c}_{w}\boldsymbol{R}(1)}&
+		{^{c}_{w}\boldsymbol{R}(2)}&
+		{^c\boldsymbol{p}_{w}}
+		\end{pmatrix}=\begin{pmatrix}
+		h_{11}&h_{12}&h_{13}\\
+		h_{21}&h_{22}&h_{23}\\
+		h_{31}&h_{32}&h_{33}
+		\end{pmatrix}
+	\end{equation}
+	则有：
+	\begin{equation}
+	{^c\boldsymbol{p}_{i,j}}(z)=h_{31}\times{^w\boldsymbol{p}_{i,j}}(x)+h_{32}\times{^w\boldsymbol{p}_{i,j}}(y)+h_{33}
+	\end{equation}
+	同时存在约束：
+	\begin{equation}
+	{^{c}_{w}\boldsymbol{R}(1)}^\top\cdot{^{c}_{w}\boldsymbol{R}(1)}=0
+	\qquad
+	\Vert{^{c}_{w}\boldsymbol{R}(1)}\Vert_2=1
+	\end{equation}
+	待求解参数：
+	\begin{equation}
+	\boldsymbol{x}^\prime=\{f,{^{c}_{w}\boldsymbol{R}(1)}^\top,{^{c}_{w}\boldsymbol{R}(1)}^\top,{^c\boldsymbol{p}_{w}}^\top\}
+	\end{equation}
+	
+	\newpage
+	\bibliographystyle{IEEEtran}
+	\bibliography{reference}
+		
+	\newpage
+	\section*{ACKNOWLEDGMENT}
+	\begin{tcolorbox}[colback=white,colframe=white!70!black,title={\bfseries Author Information}]
+	\par\noindent
+		\parbox[t]{\linewidth}{
+	 \noindent\parpic{\includegraphics[height=2in,width=1in,clip,keepaspectratio]{ShuolongChen_grey.jpg}}
+	 \noindent{\bfseries Shuolong Chen}\emph{
+	 received the B.S. degree in geodesy and geomatics engineering from Wuhan University, Wuhan China, in 2023.
+	 He is currently a master candidate at the school of Geodesy and Geomatics, Wuhan University. His area of research currently focuses on integrated navigation systems and multi-sensor fusion.
+	 Contact him via e-mail: shlchen@whu.edu.cn.
+	 }}
+	\end{tcolorbox}
+		
+		
+\end{document}

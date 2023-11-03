@@ -1,0 +1,442 @@
+\documentclass[12pt, onecolumn]{article}
+
+% 引入相关的包
+\usepackage{amsmath, listings, fontspec, geometry, graphicx, ctex, color, subfigure, amsfonts, amssymb}
+\usepackage{multirow}
+\usepackage{subfigure}
+\usepackage[table,xcdraw]{xcolor}
+\usepackage[ruled]{algorithm2e}
+\usepackage[hidelinks]{hyperref}
+
+		\usepackage{graphicx}
+		\usepackage[most]{tcolorbox}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=red,
+	citecolor=red,
+}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{picins}
+
+% 设定页面的尺寸和比例
+\geometry{left = 1.5cm, right = 1.5cm, top = 1.5cm, bottom = 1.5cm}
+
+% 设定两栏之间的间距
+\setlength\columnsep{1cm}
+
+% 设定字体，为代码的插入作准备
+\newfontfamily\ubuntu{Ubuntu Mono}
+\newfontfamily\consolas{Consolas}
+
+% 头部信息
+\title{\normf{编程：观测值逐次更新的扩展卡尔曼滤波器}}
+\author{\normf 姓名：陈烁龙\;\;\;学号：2023202140019\;\;\;学院：测绘学院}
+\date{\normf{\today}}
+
+% 代码块的风格设定
+\lstset{
+	language=C++,
+	basicstyle=\small\ubuntu,
+	keywordstyle=\textbf,
+	stringstyle=\itshape,
+	commentstyle=\itshape,
+	numberstyle=\scriptsize\ubuntu,
+	showstringspaces=false,
+	numbers=left,
+	numbersep=8pt,
+	tabsize=2,
+	frame=single,
+	framerule=1pt,
+	columns=fullflexible,
+	breaklines,
+	frame=shadowbox, 
+	backgroundcolor=\color[rgb]{0.97,0.97,0.97}
+}
+
+% 字体族的定义
+% \fangsong \songti \heiti \kaishu
+\newcommand\normf{\fangsong}
+\newcommand\boldf{\heiti}
+\newcommand\keywords[1]{\bfseries{关键词：} \normf #1}
+
+\newcommand\liehat[1]{\left[ #1 \right]_\times}
+\newcommand\lievee[1]{\left[ #1 \right]^\vee}
+\newcommand\liehatvee[1]{\left[ #1 \right]^\vee_\times}
+
+\newcommand\mlcomment[1]{\iffalse #1 \fi}
+%\newcommand\mlcomment[1]{ #1 }
+
+\newcounter{problemname}
+\newenvironment{problem}{\stepcounter{problemname}\par\noindent\normf\textbf{\textcolor[rgb]{1,0,0}{题目\arabic{problemname}.} }}{\leavevmode\\\par}
+\newenvironment{solution}{\par\noindent\normf\textbf{解答: }}{\leavevmode\\\par}
+\newenvironment{note}{\par\noindent\normf\textbf{题目\arabic{problemname}的注记: }}{\leavevmode\\\par}
+
+
+\begin{document}
+	\begin{titlepage}
+	    \centering
+	    \includegraphics[width=0.4\textwidth]{whu_red.png}\par\vspace{1cm}
+	    \vspace{4cm}
+	    {\huge\kaishu\bfseries Marginalization\par in Continuous-time-based Estimators\par 基于连续时间的状态估计器中的边缘化 \par}
+	    \vspace{3cm}
+	    {\Large\kaishu 
+	    \begin{center}\begin{tabular}{l}
+	    姓名：陈烁龙\\
+	    学号：\bfseries 2023202140019\\
+	    学院：测绘学院
+	    \end{tabular}\end{center}
+	     \par}
+	    
+	
+	    \vfill
+	
+	% Bottom of the page
+	    {\large\kaishu\bfseries \today\par}
+	\end{titlepage}
+		% 换页
+ 		\thispagestyle{empty}
+		\clearpage
+		
+		% 插入目录、图、表并换页
+		\pagenumbering{roman}
+		\tableofcontents
+		\newpage
+		\listoffigures
+%		\newpage
+%		\listoftables
+		% 罗马字母形式的页码
+		
+		\clearpage
+		% 从该页开始计数
+		\setcounter{page}{1}
+		% 阿拉伯数字形式的页码
+		\pagenumbering{arabic}
+	
+	
+	\begin{abstract}
+		\normf\bfseries
+		近几年来，同时定位与地图构建(Simultaneous Localization And Mapping, SLAM)技术已经较为成熟，且被广泛应用于诸如自动驾驶、机器人领域中，来提供连续的位置服务和精确、一致的先验地图。出于实时性的要求，SLAM算法需要在优化精度和优化效率之间平衡。目前比较主流的方法是采用滑窗(Sliding Window)优化加边缘化(Marginalization)的策略，能够在保证实时性的同时，尽可能地减少局部优化\footnote{\normf 由于滑窗优化本质上是一中局部优化而非全局批处理优化，得到的结果往往是全局次优的，而不是全局最优。}带来的精度损失。
+		
+		目前绝大多的SLAM算法在进行优化的时候都针对的是离散位姿状态序列，是一种离散时间(Discrete Time，DT)估计方法。而相对应的连续时间(Continuous Time，CT)估计方法则使用时间域上的连续函数(比如B样条函数)表达位姿轨迹，优化的是连续函数的参量。相比于DT估计方法，CT估计方法在考虑了运动连续性的同时，能够更有利于异步、高频多源传感器的融合。CT方法目前在SLAM技术上应用的不是很多，主要是因为其优化量较大，效率较低。
+		
+		本文聚焦于基于CT的估计器中的边缘化问题，进行CT估计器中边缘化算法的探究、实现和测试。由于本人的研究方向是连续时间相关的SLAM技术，因此在本次考察报告中，在不偏离课程主题的情况下，对边缘化这一问题进行理论层面和实现层面的探究。
+	\end{abstract}
+	
+	\noindent\keywords{同时定位与地图构建，边缘化，连续时间估计方法}
+	
+	\section{\normf{概述}}
+	\normf\bfseries
+	
+	\subsection{\normf 边缘化}
+	同时定位与地图构建(Simultaneous Localization and Mapping，SLAM)指从未知环境的未知地点出发，在运动过程中通过重复观测到的地图特征定位自身位置和姿态，再根据自身位置增量式的构建地图，从而达到同时定位和地图构建的目的\cite{高翔2017视觉}。在一个SLAM场景中，随着时间的推移，系统中的状态越来越多。如果在估计器中考虑所有的状态，会导致优化问题膨胀，进而降低估计器的优化效率，使得SLAM算法不能实时运行。
+	
+	在现阶段的SLAM技术中，一种简单有效的控制优化规模的方法，是仅保留离当前时刻最近的N个关键帧，去掉时间上更早的关键帧。也即，将优化规模固定在一个时间窗口内，离开这个窗口的则被丢弃。这种方法称为滑动窗口(Sliding Window)\cite{sibley2008sliding}。当然滑窗优化，可以直接将窗口外的状态直接扔掉，也可以通过构建先验因子，加入到滑窗优化问题中，后者即为边缘化(Marginalization)。
+	边缘化在概率中的意义是条件概率，即$ P (\boldsymbol{x}_n, \boldsymbol{x}_m) = P (\boldsymbol{x}_n |\boldsymbol{x}_m)P (\boldsymbol{x}_m)$，其中 $\boldsymbol{x}_m$是被边缘化的变量，$\boldsymbol{x}_n$是保留的变量。边缘化相当于将 $\boldsymbol{x}_m$ 的信息集成到$\boldsymbol{x}_n$中，从而减少了优化问题的维度和复杂度。
+	
+	\subsection{\normf{离散时间和连续时间估计}}
+	真实世界中的传感器都是离散输出，如Camera和LiDAR输出帧率在10赫兹到30赫兹之间，IMU则可以达到上百赫兹。对于一个多传感器系统而言，在不考虑时延的情况下，直接处理不同传感器的同步离散输出来获取相关信息是一种简单有效的方法。但是当存在传感器异步测量时，需要进行时间同步，以消除异步测量带来的影响。一般而言，可以通过特制器件在硬件层面实现多传感器时间同步，但是这往往会增加系统的复杂度，成本也会更高。另一种时间同步方法是使用单一的中央处理单元(Central Processing Unit，CPU)记录不同传感器采集的数据帧的时间撮，在去除通信延迟后基于估计得到的常值时延进行时间同步。
+	
+	对于后一种时间同步方法，目前存在两类方法：离散时间估计和连续时间估计。离散时间估计需要定制算法，以在估计过程中包含来自不同传感器的异步测量，且通常伴有相应的简化假设；而连续时间估计会先基于传感器的离散输出构建一个时间连续的函数，如B样条函数。当存在异步测量时，只需要对该函数进行采样，即可获取同步测量。
+	
+	以机械激光雷达的运动畸变为例，由于同一点云帧中的不同点是异步测量，当LiDAR动态采集点云数据时，会导致畸变效应，因此需要进行时间同步。此时，离散时间估计方法一般会将运动简化为匀速运动或匀加速运动，而后基于已有的离散轨迹进行内插，如图\ref{fig:disc}所示。显然，当运动激烈时，这会引入较大的偏差。而连续时间估计方法会首先基于离散轨迹获取一个时间连续轨迹，如图\ref{fig:cont}所示，而后基于点云帧内各点的时间撮进行采样，并基于此消除运动畸变。
+
+	  \begin{figure}[t]
+	    \centering
+	     \subfigure[\normf{离散时间估计}]{
+	       \centering
+	       \includegraphics[width=0.45\linewidth]{img/disc.png}
+	       \label{fig:disc}
+	     }
+	     \subfigure[\normf{连续时间估计}]{
+	       \centering
+	       \includegraphics[width=0.45\linewidth]{img/cont.png}
+	       \label{fig:cont}
+	     }
+	
+	    \caption{\normf{基于离散时间估计和连续时间估计消除LiDAR帧运动畸变}}
+	
+	    \label{fig:disc_cont}
+	  \end{figure}
+	
+	事实上，已有研究表明：当不存在传感器异步测量时，离散时间估计和连续时间估计结果是一致的；当存在传感器异步测量时，连续时间估计要优于离散时间估计\cite{cioffi2022continuous}。
+	
+	本文使用B样条曲线进行时间连续建模，下面对其进行介绍。B样条曲线诞生于计算机图形学领域，目的是为了在不损失精度的条件下，用离散的控制点和相关控制参数(即阶次)表示一条连续的曲线。B样条曲线是贝塞尔曲线的一种扩展。贝塞尔曲线通过离散的控制点和参数来控制曲线，但局部控制点的变动会影响整条曲线的走向，即贝塞尔曲线局部是不可控的。而B样条曲线是局部可控的，局部控制点的变动只会影响局部曲线，不会对其他区域的曲线造成影响，具有较强的操控性，因此应用较为广泛。对于一条具有$n+1$个控制点的$d$次B样条曲线\footnote{\normf{B样条曲线的阶数(order)比次数(degree)多1，即$d$次B样条曲线的阶为$d+1$。}}，其可表示为：
+	\begin{equation}
+	  \label{equ:b_spline_origin}
+	  \boldsymbol{B}_{n,d}(t)=\sum_{i=0}^{n}\boldsymbol{p}_i\cdot b_{i,d}(t)
+	\end{equation}
+	其中$b_{i,d}(t)$可以通过Cox-de Boor递归公式\cite{de1978practical}得到：
+	\begin{equation}
+	  \begin{aligned}
+	    b_{i,0}(t) & =\begin{cases}
+	                    1\quad t_i\le t\le t_{i+1} \\
+	                    0\quad\dots
+	                  \end{cases}                                                                \\
+	    b_{i,d}(t) & =\frac{t-t_i}{t_{i+d}-t_i}b_{i,d-1}(t)+\frac{t_{i+d+1}-t}{t_{i+d+1}-t_{i+1}}b_{i+1,d-1}(t)
+	  \end{aligned}
+	\end{equation}
+	当节点等距时，称B样条均匀。均匀B样条完全由阶次决定，且$t\in[t_i,t_{i+1}]$节点处的值只由$d+1$个控制点$\boldsymbol{p}_i,\boldsymbol{p}_{i+1},\cdots,\boldsymbol{p}_{i+d}$约束。阶次决定了B样条曲线的表达能力，阶次越高，表达能力越强。图\ref{fig:bspline}展示了控制点相同但阶次不同的均匀B样条曲线。
+	  \begin{figure}[t]
+	    \centering
+	    \includegraphics[width=\linewidth]{img/bspline_2d.png}
+	
+	    \caption{\normf{不同阶次的均匀B样条曲线比较}}
+	
+	    \label{fig:bspline}
+	  \end{figure}
+	
+	
+	对于均匀B样条曲线而言，式\ref{equ:b_spline_origin}可以等价表示为更简洁的矩阵形式\cite{qin1998general}：
+	\begin{equation}
+	  \label{equ:matrix_bspline1}
+	  \boldsymbol{p}(t)=\sum_{j=0}^{d}\boldsymbol{u}^T\boldsymbol{M}^{(d+1)}_{(j)}\boldsymbol{p}_{i+j}
+	\end{equation}
+	其中：$\boldsymbol{u}^T=\begin{pmatrix}
+	    1 & u & \cdots & u^d
+	  \end{pmatrix}$，且$u=(t-t_i)/(t_{i+1}-t_i)$；$\boldsymbol{M}^{(d+1)}$是维度为$d+1$的方阵，$\boldsymbol{M}^{(d+1)}_{(j)}$表示其第$j$列。当$d$确定后，矩阵$\boldsymbol{M}^{(d+1)}$也就被唯一确定了。如在本文中，使用的是阶为4(即$d=3$)的B样条曲线表示轨迹，则：
+	\begin{equation}
+	  \boldsymbol{M}^{(3+1)}=\frac{1}{6}\begin{pmatrix}
+	    1  & 4  & 1  & 0 \\
+	    -3 & 0  & 3  & 0 \\
+	    3  & -6 & 3  & 0 \\
+	    -1 & 3  & -3 & 1
+	  \end{pmatrix}\quad
+	  \boldsymbol{u}=\begin{pmatrix}
+	    1\\{u}\\{u}^2\\{u}^3
+	  \end{pmatrix}
+	\end{equation}
+	进一步化简式\ref{equ:matrix_bspline1}，可以得到：
+	\begin{equation}
+	  \label{equ:matrix_bspline2}
+	  \boldsymbol{p}(t)=\boldsymbol{p}_i+\sum_{j=1}^{d}\boldsymbol{u}^T\tilde{\boldsymbol{M}}^{(d+1)}_{(j)}(\boldsymbol{p}_{i+j}-\boldsymbol{p}_{i+j+1})
+	\end{equation}
+	当$d=3$时，上式中矩阵$\tilde{\boldsymbol{M}}^{(3+1)}$为：
+	\begin{equation}
+	  \tilde{\boldsymbol{M}}^{(3+1)}=\frac{1}{6}\begin{pmatrix}
+	    6 & 5  & 1  & 0 \\
+	    0 & 3  & 3  & 0 \\
+	    0 & -3 & 3  & 0 \\
+	    0 & 1  & -2 & 1
+	  \end{pmatrix}
+	\end{equation}
+	
+	在使用均匀B样条曲线表示位姿轨迹时，可以采用姿态量和平移量分开的形式(即$\mathrm{SO}(3)+\mathbb{R}^3$)，也可以采用二者耦合的形式(即SE(3))。后一种的精度更高，但其姿态量和平移量高度耦合，不利于控制平移曲线。而使用前一种解耦的方式分开表达位姿轨迹，更利于参数估计\cite{haarbach2018survey}。对于平移量，用式\ref{equ:matrix_bspline1}或式\ref{equ:matrix_bspline2}即可直接表示，但是对于姿态量而言，由于其在流行上其对数乘(本质上为加法)不封闭，需要作进一步处理\cite{高翔2017视觉}。具体而言，若用单位四元数表示姿态，则首先通过对数映射将旋转量从流行空间变换到代数空间，在数乘运算结束后通过指数映射回到流行空间，具体的推导可参考\cite{kim1995general}。这里直接给出结果：
+	\begin{equation}
+	  \boldsymbol{q}(t)=\boldsymbol{q}_i\circ \prod_{j=1}^{d}\exp\left( \boldsymbol{u}^T\tilde{\boldsymbol{M}}^{(d+1)}_{(j)}\log\left( \boldsymbol{q}_{i+j+1}^{-1}\circ \boldsymbol{q}_{i+j}\right) \right)
+	\end{equation}
+	其中$\circ$表示四元数乘法运算。
+	
+	
+	\section{\normf 边缘化数学推导}
+	边缘化是一种利用H矩阵的稀疏性进行加速计算的方法，可以快速求解增量方程，从而提高SLAM的效率和鲁棒性。边缘化的过程是将增量方程中的海森矩阵分块，然后通过高斯消元或舒尔补等方法消去一部分变量，得到一个更小的方程。
+	
+	具体来说，假设每次迭代优化求解线性方程组为：
+		\begin{equation}
+		\left( \boldsymbol{J}^\top\boldsymbol{J}\right) \cdot\delta\boldsymbol{x}=
+		\left( -\boldsymbol{J}^\top\boldsymbol{e}\right) 
+		\Rightarrow
+		\boldsymbol{H}\cdot\delta\boldsymbol{x}=\boldsymbol{b}
+		\end{equation}
+		现令$\delta\boldsymbol{x}$由待边缘化的状态$\delta\boldsymbol{x}_m$和不边缘化的状态$\delta\boldsymbol{x}_n$构成，则有：
+		\begin{equation}
+		\begin{pmatrix}
+		\boldsymbol{h}_{mm}&\boldsymbol{h}_{mn}\\
+		\boldsymbol{h}_{nm}&\boldsymbol{h}_{nn}
+		\end{pmatrix}\cdot\begin{pmatrix}
+		\delta\boldsymbol{x}_m\\
+		\delta\boldsymbol{x}_n
+		\end{pmatrix}=\begin{pmatrix}
+		\boldsymbol{b}_{m}\\\boldsymbol{b}_{n}
+		\end{pmatrix}
+		\end{equation}
+		对上式进行等价变换：
+		\begin{equation}
+		\left( \begin{array}{cc|c}
+		\boldsymbol{h}_{mm}&\boldsymbol{h}_{mn}&\boldsymbol{b}_m\\
+		\boldsymbol{h}_{nm}&\boldsymbol{h}_{nn}&\boldsymbol{b}_n
+		\end{array}\right) 
+		\xrightarrow{r_2-\boldsymbol{h}_{nm}\cdot\boldsymbol{h}_{mm}^{-1}\cdot r_1}
+		\left( \begin{array}{cc|cc}
+		\boldsymbol{h}_{mm}&\boldsymbol{h}_{mn}&\boldsymbol{b}_m\\
+		\boldsymbol{0}_{nm}&\boldsymbol{h}_{nn}-\boldsymbol{h}_{nm}\cdot\boldsymbol{h}_{mm}^{-1}\cdot\boldsymbol{h}_{mn}
+		&
+		\boldsymbol{b}_n-\boldsymbol{h}_{nm}\cdot\boldsymbol{h}_{mm}^{-1}\cdot\boldsymbol{b}_{m}
+		\end{array}\right) 
+		\end{equation}
+		最终得到：
+		\begin{equation}
+		\left(
+		\boldsymbol{h}_{nn}-\boldsymbol{h}_{nm}\cdot\boldsymbol{h}_{mm}^{-1}\cdot\boldsymbol{h}_{mn}\right) \cdot\delta\boldsymbol{x}_n=	\boldsymbol{b}_n-\boldsymbol{h}_{nm}\cdot\boldsymbol{h}_{mm}^{-1}\cdot\boldsymbol{b}_{m}
+		\Rightarrow
+		\boldsymbol{H}_*\cdot\delta\boldsymbol{x}_n=\boldsymbol{b}_*
+		\end{equation}
+		注意到，上式中的$\boldsymbol{H}_*$和$\boldsymbol{b}_*$是基于当前状态计算得到的。当$\boldsymbol{x}$变化的时候，二者也会发生变化。
+		为此，对$\boldsymbol{b}^*$进行线性化操作：
+		\begin{equation}
+		\boldsymbol{b}^{(k+1)}=\boldsymbol{b}^{(k)}+\frac{\partial \boldsymbol{b}}{\partial\boldsymbol{x}}\cdot\delta\boldsymbol{x}=
+		\boldsymbol{b}^{(k)}+\frac{\partial \boldsymbol{b}}{\partial\boldsymbol{e}}\cdot\frac{\partial \boldsymbol{e}}{\partial\boldsymbol{x}}\cdot\delta\boldsymbol{x}=
+		\boldsymbol{b}^{(k)}-\boldsymbol{J}^\top\boldsymbol{J}\cdot\delta\boldsymbol{x}=\boldsymbol{b}^{(k)}-\boldsymbol{H}\cdot\delta\boldsymbol{x}
+		\end{equation}
+		由此得到：
+		\begin{equation}
+		\begin{cases}
+		\begin{aligned}
+		\boldsymbol{b}_m^{(k+1)}&=\boldsymbol{b}_m^{(k)}-\boldsymbol{h}_{mm}\cdot\delta\boldsymbol{x}_m-\boldsymbol{h}_{mn}\cdot\delta\boldsymbol{x}_n
+		\\
+		\boldsymbol{b}_n^{(k+1)}&=\boldsymbol{b}_n^{(k)}-\boldsymbol{h}_{nm}\cdot\delta\boldsymbol{x}_m-\boldsymbol{h}_{nn}\cdot\delta\boldsymbol{x}_n
+		\end{aligned}
+		\end{cases}
+		\end{equation}
+		即有：
+		\begin{equation}
+		\begin{aligned}
+		\boldsymbol{b}^{(k+1)}_*&=\boldsymbol{b}_n^{(k+1)}-\boldsymbol{h}_{nm}\cdot\boldsymbol{h}_{mm}^{-1}\cdot\boldsymbol{b}_{m}^{(k+1)}
+		\\
+		&=\left( \boldsymbol{b}_n^{(k)}-\boldsymbol{h}_{nm}\cdot\delta\boldsymbol{x}_m-\boldsymbol{h}_{nn}\cdot\delta\boldsymbol{x}_n\right) -\boldsymbol{h}_{nm}\cdot\boldsymbol{h}_{mm}^{-1}\cdot\left(
+		\boldsymbol{b}_m^{(k)}-\boldsymbol{h}_{mm}\cdot\delta\boldsymbol{x}_m-\boldsymbol{h}_{mn}\cdot\delta\boldsymbol{x}_n
+		\right) 
+		\\
+		&=\left( \boldsymbol{b}_n^{(k)}-\boldsymbol{h}_{nm}\cdot\boldsymbol{h}_{mm}^{-1}\cdot\boldsymbol{b}_m^{(k)}\right) -\left( \boldsymbol{h}_{nn}-\boldsymbol{h}_{nm}\cdot\boldsymbol{h}_{mm}^{-1}\cdot\boldsymbol{h}_{mn}\right) \cdot\delta\boldsymbol{x}_n
+		\\
+		&=\boldsymbol{b}_*^{(k)}-\boldsymbol{H}_*\cdot\delta\boldsymbol{x}_n
+		\end{aligned}
+		\end{equation}
+		对上式进一步化简，得到：
+		\begin{equation}
+		\boldsymbol{b}^{(k+1)}_*=\boldsymbol{b}_*^{(k)}-\boldsymbol{H}_*\cdot\delta\boldsymbol{x}_n=\boldsymbol{J}_*^\top\cdot\left(\left( {\boldsymbol{J}_*^\top}\right) ^{-1}\cdot\boldsymbol{b}_*^{(k)} -\boldsymbol{J}_*\cdot\delta\boldsymbol{x}_n\right) 
+		\end{equation}
+		所以残差为：
+		\begin{equation}
+		\boldsymbol{e}_*=-\left( \left( {\boldsymbol{J}_*^\top}\right) ^{-1}\cdot\boldsymbol{b}_*^{(k)} -\boldsymbol{J}_*\cdot\delta\boldsymbol{x}_n\right) =\boldsymbol{J}_*\cdot\delta\boldsymbol{x}_n-\left( {\boldsymbol{J}_*^\top}\right) ^{-1}\cdot\boldsymbol{b}_*^{(k)}
+		\end{equation}
+		该残差即为边缘化因子。
+		
+		\section{\normf 代码实现}
+		本次的边缘化是基于Ceres\footnote{\normf Ceres库是一个开源的Cpp库，用于建模和求解大规模的非线性优化问题。它可以用于求解有界约束的非线性最小二乘问题和一般的无约束优化问题。}库\cite{Agarwal_Ceres_Solver_2022}实现的。
+		事实上，VINS-Mono\cite{qin2018vins}的凯源代码中，就已经实现了一个较为初步的边缘化版本。但是其存在一下的问题：
+		\begin{enumerate}
+		\item VINS-Mono采取的是先优化后边缘化的策略。其在优 化 后 再 次 将 因 子 加 入
+		Marginalization Info中，但事实
+		上 ， 可 以 将 Problem 直 接 给 到
+		Marginalization Info， Problem 里 面记录了较为丰富的状态信息；
+		
+		\item VINS-Mono通 过 残 差(Cost Function)的
+		Evaluate()函数构建雅可比矩阵。事
+		实上，用Problem的Evaluate()函数构
+		建 更 加 简 洁(不 需 要 考 虑 Loss
+		Function)；
+		
+		\item VINS-Mono使用基于残差函数构建雅克比的形式，因此多 个 残 差可 以并行 求 解 雅
+		可比（代码里面是4线程），但是事实上，Problem类的Evaluate()函数
+		里面有线程参数(option)，可以直接指定求解线程数。
+		
+		\item 最重 要的 一点， VINS-Mono 代 码 泛 化
+		性不强。由于姿态四元数在流形上优化，
+		代码里充斥着6(位姿自由度)，7(位姿参数数目)等数字。如果存在其他非线性流行状态的边缘化，需要修改大量代码。
+		\end{enumerate}
+		
+		考虑到VINS-Mono在边缘化实现代码上的不足之处，本文在实现边缘化的时候，有如下几点考量：
+		\begin{enumerate}
+		\item 优化后，直接基于Problem进行Marginalization Info的构建。一方面，代码会非常简洁。另一方面，
+		Problem本身带有参数块的流形（Manifold）信息，可以一并将这些信息给到Marginalization Info。
+		
+		\item 在构建Marginalization Factor的时候，通过记录的Manifold，调用其Minus()函数，直接求得流形
+		上的状态距离。
+		
+		\item 边缘化残差方面，使用Dynamic Numeric Diff Cost Function（最好的选择）。 Dynamic：必要性，
+		Numeric： Manifold Minus需要， Diff：使用数值求导，简化代码（效率可能有一点点下降，但不
+		会太多）。
+		\end{enumerate}
+		
+		本文基于如上的考量，基于Ceres库对边缘化进行了实现。代码仓库以及在GitHub\footnote{\normf GitHub是世界上最大的开源社区，拥有超过1亿的用户和3.3亿的项目。无论您是创业者还是学习者，GitHub都是您的家。您可以在GitHub上发现、复制和贡献各种各样的项目，从曲线拟合到核聚变，从机器学习到人工智能。Github的网址(\url{https://github.com})。}上进行了开源(\url{https://github.com/Unsigned-Long/CTraj.git})。
+		
+		\section{\normf 连续时间估计器中的边缘化}
+		现考虑一个二维平面上的轨迹拟合问题。在该问题中，通过B样条函数对轨迹进行描述，本质上是一种连续时间方法。设轨迹长度为15秒，轨迹的数据采用的是分段播发的方式，前一段时间的数据在0到6秒，后一段时间的数据在6到15秒。另外，在在时间6到9秒的过程中，载体出现了剧烈运动。现使用连续时间方法对该离散轨迹进行估计连续时间建模。
+		
+		\subsection{\normf 全局优化}
+		\begin{figure}[h!]
+		\centering
+		\subfigure[\normf{全局优化}]{
+		  \centering
+		  \includegraphics[width=0.45\linewidth]{img/data1.png}
+		  \label{fig:global}
+		}
+		\subfigure[\normf{局部优化第一阶段}]{
+		  \centering
+		  \includegraphics[width=0.45\linewidth]{img/data2.png}
+		  \label{fig:local_seg1}
+		}
+		
+		\caption{\normf{全局优化和局部优化第一阶段的优化结果}}
+		
+		\label{fig:opt1}
+		\end{figure}
+		
+		\begin{figure}[h!]
+		\centering
+		\subfigure[\normf{局部优化第二阶段：丢弃状态}]{
+		\centering
+		\includegraphics[width=0.45\linewidth]{img/data3.png}
+		\label{fig:local_seg2_throw}
+				}
+				\subfigure[\normf{局部优化第二阶段：边缘化弃状态}]{
+		\centering
+		\includegraphics[width=0.45\linewidth]{img/data4.png}
+		\label{fig:local_seg2_marg}
+				}
+		
+		\caption{\normf{局部优化第二阶段不同策略的优化结果}}
+		
+		\label{fig:opt2}
+		\end{figure}
+		
+		当使用全局优化的时候，直接将基于所有的量测构建的因子加入到估计器中。在该文中，所有的状态(也即控制点)都会被加入到估计器中。因此得到的连续时间轨迹是全局最优的。优化结果见图\ref{fig:global}。其中，绿色的离散点表示位置量测，蓝色的点表示优化的状态(也即B样条中的节点)，红色的轨迹即为最终的B样条轨迹，是一个时间连续的轨迹。
+		
+		虽然全局优化得到的是全局最优的连续时间轨迹，但是其将所有的状态量加入到估计器中进行优化，导致的优化规模较大(类比于SLAM中的全局后端优化)。另一种估计优化效率的方式是使用实时局部优化。
+		
+		\subsection{\normf 局部优化}
+		局部优化顾及了优化规模。当每批次的离散轨迹数据到来时，进行实时的优化。显然，得到的优化结果是次优的。但是由于没有将所有的状态量的加入到估计器中进行优化，因此效率更高。当第一批数据到来时，进行轨迹第一段的优化，结果见图\ref{fig:local_seg1}。
+		
+		当第二批数据到来时，有两中优化策略：
+		\begin{enumerate}
+		\item 状态丢弃：使用第二段的数据进行残差的构建，优化残差涉及的状态，不优化残差不涉及的状态。换言之，即直接丢弃掉第一阶段的状态，结果见图\ref{fig:local_seg2_throw}。可以看到，最终拟合的轨迹出现了较大的波动，原因在于在第二批次的优化中，第7个状态节点在优化的时候，没有考虑到第一阶段量测数据的约束。所以看上去样条对第二阶段的数据拟合得很好，但是破坏了整体拟合效果的一致性。
+		
+		\item 状态边缘化：使用第二段的数据进行残差的构建，优化残差涉及的状态，同时基于第一阶段的量测构建边缘化因子(残差)，将这些残差一同在估计器中进行优化，结果见图\ref{fig:local_seg2_marg}。可以看到由于考虑了第一阶段的先验信息，采用边缘化的策略的拟合效果较好，几乎和全局优化的结果一致。
+		\end{enumerate}
+			
+		需要注意的是，对于两种优化策略而言，在估计器中被优化的状态数目是一样的，唯一的区别是第二种策略多了一个先验因子，即边缘化因子。正式由于此因子的加入，将第一阶段的量测数据“隐性”地加入到了估计器中。虽然会存在线性化的误差，但是相较于第一种直接丢弃状态的策略，效果有着明显的提升。
+		
+		\begin{figure}[t!]
+		\centering
+		\includegraphics[width=\linewidth]{img/marg_order_3.png}
+		
+		\caption{\normf{边缘化过程可视化}}
+		
+		\label{fig:marg_visual}
+		\end{figure}
+		
+		为了更好的展示此处边缘化的过程，我们绘制了如图\ref{fig:marg_visual}所示的可视化图。左图表示暂未被边缘化时的增量方程的海森矩阵，左上角(灰色)对应是即将被边缘化的状态，右下角(红色)对应的是不会被边缘化的状态。很明显地，由于还没有进行边缘化，矩阵保持着稀疏的结构，因此可以通过稀疏矩阵的加速求解算法求解增量方程。右图表示的是待被边缘化的状态被边缘化后，不被边缘化的状态对应的新的海森矩阵。很明显地，由于进行了边缘化操作，矩阵的稀疏性被破坏了，但是引入了先验，也即此处海森矩阵中稠密块。
+		
+		\section{\normf 总结}
+		本文对SLAM中的边缘化进行了理论推导和代码实现，并聚焦于基于连续时间的优化问题，对边缘化进行了实验和测试。事实上，当前的边缘化方面的难点在于如何采用一种优秀的边缘化策略(如何取舍状态)，在尽可能保证先验知识被保存下来的同时，不会极大地破坏矩阵的稀疏性。差的边缘化策略会极大地破坏海森矩阵的稀疏性，往往会带来更多的计算消耗，最终导致适得其反的结局。
+		
+	\newpage
+	\bibliographystyle{IEEEtran}
+	\bibliography{reference}
+		
+	\newpage
+	\section*{ACKNOWLEDGMENT}
+	\begin{tcolorbox}[colback=white,colframe=white!70!black,title={\bfseries Author Information}]
+	\par\noindent
+		\parbox[t]{\linewidth}{
+	 \noindent\parpic{\includegraphics[height=2in,width=1in,clip,keepaspectratio]{ShuolongChen_grey.jpg}}
+	 \noindent{\bfseries Shuolong Chen}\emph{
+	 received the B.S. degree in geodesy and geomatics engineering from Wuhan University, Wuhan China, in 2023.
+	 He is currently a master candidate at the school of Geodesy and Geomatics, Wuhan University. His area of research currently focuses on integrated navigation systems and multi-sensor fusion.
+	 Contact him via e-mail: shlchen@whu.edu.cn.
+	 }}
+	\end{tcolorbox}
+		
+		
+\end{document}
