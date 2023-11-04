@@ -113,11 +113,9 @@
 		\pagenumbering{arabic}
 	
 	
-	
-	\section{\normf{角点检测}}
+	\section{\normf{针孔相机模型}}
 	\normf\bfseries
 	
-	\subsection{\normf{相机模型}}
 	设提取到的角点为序列$\mathcal{P}=\{\boldsymbol{p}_{i,j}\mid i\in[0,r-1],j\in[0,c-1]\}$。在棋盘格上设置世界坐标系$\{w\}$，其$x$轴向下，$y$轴向右，$z$轴向外，坐标原点与左上角的角点重合。由于角点在同一平面上，且间距相等，有：
 	\begin{equation}
 	{^w\boldsymbol{p}_{i,j}}(z)=0
@@ -147,7 +145,7 @@
 	\end{aligned}
 	\end{pmatrix}^\top
 	\end{equation}
-	进行加畸变操作，得到：
+	进行加畸变操作(在本次实验中，只考虑径向畸变)，得到：
 	\begin{equation}
 	\begin{cases}
 	\begin{aligned}
@@ -173,66 +171,247 @@
 	\end{pmatrix}
 	\end{equation}
 	
-	\subsection{\normf{参数求解}}
-	在不考虑畸变模型的情况下，有：
+	\section{\normf{基于霍夫变换的径向畸变校正}}
+	本次的畸变去除算法采用的是基于霍夫变换的径向畸变去除算法，该方法由Cucchiara等人\cite{cucchiara2003hough}提出。
+	该方法最大的假设为径向变形具有扭曲不通过光学中心的直线的特，其进行图像去畸变的两个步骤为：
+	\begin{enumerate}
+	\item 自动或半自动识别候选图像中的候选线条；
+	
+	\item 迭代变化径向畸变参数，以便
+		使候选线的直线度最大化；
+	\end{enumerate}
+	由于检测线条和测量其直线度的最著名、最有效的方法是 Hough 变换 (HT) \cite{illingworth1988survey}，因此该方法称为 HTRDC，即表示基于 HT变换 的径向畸变校正，其流图如图\ref{fig:htrdc}所示。
+	
+	\begin{figure}[h]
+		\centering
+		\includegraphics[width=0.8\linewidth]{images/htrdc.png}
+		\caption{\normf 基于霍夫变换的径向畸变校正算法流程图}
+		\label{fig:htrdc}
+	\end{figure}
+	
+	具体来说，该方法首先用Canny 边缘检测\cite{canny1986computational}提取 ROI，并利用滞后非最大值抑制方法提取 "强 "边缘。在边缘检测之后，以多分辨率的方式对 ROI
+	变形：从初始的 最小k值和 最大k值开始，将范围划分为 分 n 步进行，每一步 i 的失真参数为：
 	\begin{equation}
-	\begin{pmatrix}
-	u_{i,j}\\v_{i,j}\\1
-	\end{pmatrix}=\frac{1}{{^c\boldsymbol{p}_{i,j}}(z)}\cdot
-	\begin{pmatrix}
-	f_x&0&c_x\\
-	0&f_y&c_y\\
-	0&0&1
-	\end{pmatrix}\begin{pmatrix}
-	{^{c}_{w}\boldsymbol{R}(1)}&
-	{^{c}_{w}\boldsymbol{R}(2)}&
-	{^c\boldsymbol{p}_{w}}
-	\end{pmatrix}
-	\begin{pmatrix}
-	{^w\boldsymbol{p}_{i,j}}(x)\\{^w\boldsymbol{p}_{i,j}}(y)\\1
-	\end{pmatrix}
+	k^i=k^{min}+i\times\frac{k^{max}-k^{min}}{n}
 	\end{equation}
-	在不考虑畸变模型的情况下，有：
+	然后，计算直线的 Hough 变换。Hough 空间的定义如下:
 	\begin{equation}
-	\begin{pmatrix}
-	u_{i,j}-c_x\\v_{i,j}-c_y\\1
-	\end{pmatrix}=\frac{f}{{^c\boldsymbol{p}_{i,j}}(z)}\cdot
-	\begin{pmatrix}
-	{^{c}_{w}\boldsymbol{R}(1)}&
-	{^{c}_{w}\boldsymbol{R}(2)}&
-	{^c\boldsymbol{p}_{w}}
-	\end{pmatrix}
-	\begin{pmatrix}
-	{^w\boldsymbol{p}_{i,j}}(x)\\{^w\boldsymbol{p}_{i,j}}(y)\\1
-	\end{pmatrix}
+	HT^i_j=\{h^i_j(\rho,\theta),\rho\in\left[ -R,+R\right],\theta\in\left[ 0,\pi\right]  \}
 	\end{equation}
-	将上式中的映射矩阵记为：
+	其中$R=\sqrt{w^2_{ROI}+h^2_{ROI}}$，$w$和$h$为ROI的宽度和高度。
+	基于标准的 HT参数线方程，对其进行修改，使得权重与 ROI(x,y) 值成正比，如算法\ref{alg:alg}所示。
+	\begin{algorithm}
+	\caption{\normf 修改后的HT参数线方程}
+	\label{alg:alg}
+	\ForEach{$(x,y)\in ROI^i_j$}{
+	\ForEach{$\theta=a\cdot\delta\Delta\theta$}{
+		$\rho\gets x\cdot\cos\theta+y\cdot\sin\theta$
+		
+		$HT^i_j( \rho,\theta)\gets HT^i_j( \rho,\theta)+ROI^i_j(x,y) $
+	}
+	}
+	\end{algorithm}
+	需要注意的是，算法\ref{alg:alg}中的量化值$(\Delta \rho,\Delta\theta)$的选择，即 Hough 空间的分辨率，必须与 Hough 空间的分辨率相关联。
+	
+	接着使用高斯滤波器对 HT 空间进行后处理，以平滑由于图像和 HT 空间的量化而可能产生的振荡。
+	而后对未扭曲 ROI 的平直度进行评估。评估是通过找到 HT 空间的全局最大值来进行的，也即：
 	\begin{equation}
-	\begin{pmatrix}
-		{^{c}_{w}\boldsymbol{R}(1)}&
-		{^{c}_{w}\boldsymbol{R}(2)}&
-		{^c\boldsymbol{p}_{w}}
-		\end{pmatrix}=\begin{pmatrix}
-		h_{11}&h_{12}&h_{13}\\
-		h_{21}&h_{22}&h_{23}\\
-		h_{31}&h_{32}&h_{33}
-		\end{pmatrix}
-	\end{equation}
-	则有：
-	\begin{equation}
-	{^c\boldsymbol{p}_{i,j}}(z)=h_{31}\times{^w\boldsymbol{p}_{i,j}}(x)+h_{32}\times{^w\boldsymbol{p}_{i,j}}(y)+h_{33}
-	\end{equation}
-	同时存在约束：
-	\begin{equation}
-	{^{c}_{w}\boldsymbol{R}(1)}^\top\cdot{^{c}_{w}\boldsymbol{R}(1)}=0
-	\qquad
-	\Vert{^{c}_{w}\boldsymbol{R}(1)}\Vert_2=1
-	\end{equation}
-	待求解参数：
-	\begin{equation}
-	\boldsymbol{x}^\prime=\{f,{^{c}_{w}\boldsymbol{R}(1)}^\top,{^{c}_{w}\boldsymbol{R}(1)}^\top,{^c\boldsymbol{p}_{w}}^\top\}
+	M^i_j=\max_{(\rho,\theta)}\left(\bar{HT^i_j}( \rho,\theta) \right) 
 	\end{equation}
 	
+	至此，完成了一次迭代。在下一次迭代时，畸变参数的最小值选取为：
+	\begin{equation}
+	k^{min}_{j+1}=\max\left(0,MK_j-\frac{k^{max}_{j}-k^{min}_{j}}{n} \right) 
+	\end{equation}
+	最大值选取为：
+	\begin{equation}
+	k^{max}_{j+1}=\min\left(1,MK_j+\frac{k^{max}_{j}-k^{min}_{j}}{n} \right) 
+	\end{equation}
+	而后重复上述的过程。当 新计算出的 k值范围小于固定阈值时，递归结束，此时$MK_j$被选为最佳 k值。
+	
+	另外，需要注意的是，k的计算值取决于
+	最初选定的 ROI。如果 ROI 中存在较强的边缘，则改变径向变形的效果会更加明显，与之对应的，该方法效果会更好。
+	
+	\section{\normf 实验结果}
+	本次实验选取了4张存在径向畸变的影像，实验的结果如图\ref{fig:图像1的实验结果}、\ref{fig:图像2的实验结果}、\ref{fig:图像3的实验结果}、\ref{fig:图像4的实验结果}所示。
+	可以看到，图片中的大部分畸变都已经被去除。具体来说，图\ref{fig:图像1的实验结果}、\ref{fig:图像2的实验结果}、\ref{fig:图像3的实验结果}的去畸变效果比较突出，而图\ref{fig:图像4的实验结果}的去畸变效果存在不足之处，图片中的隐式直线没有被完全对齐到一起，原因在于该图像的径向畸变程度明显比其他图像大，且边缘特征非常稀疏(虽然角点很多)，导致算法的“样本”过少，参数估计(径向畸变参数k)的准确地降低。
+	
+	HTRDC 方法在很大程度上依赖于径向畸变的概念和定义。
+	由于径向畸变
+	与时间、摄像机运动或场景无关，因此可以在处理开始时找到最佳的变形参数
+	参数，而且每个摄像机只需使用一次。唯一的要求是场景中包含
+	唯一的要求是场景中包含一些对比强烈的直线。在很多场景下都能使用该方法进行径向畸变的去除，如室内监控、家庭机器人、人体 3D 建模、基于视觉的交通控制和管理
+	车视频中的车道检测等。
+	
+	\begin{figure}[h!]
+	\centering
+	\subfigure[\normf{畸变图像}]{
+		\centering
+		\includegraphics[width=0.4\linewidth]{images/test.jpg}
+	}
+	\subfigure[\normf{去畸变图像}]{
+		\centering
+			\includegraphics[width=0.48\linewidth]{results/test.jpg}
+		}
+	\caption{\normf 图像1的实验结果}
+	\label{fig:图像1的实验结果}
+	\end{figure}
+	\begin{figure}[h!]
+	\centering
+	\subfigure[\normf{畸变图像}]{
+		\centering
+		\includegraphics[width=0.425\linewidth]{images/test2.png}
+	}
+	\subfigure[\normf{去畸变图像}]{
+		\centering
+			\includegraphics[width=0.45\linewidth]{results/test2.png}
+		}
+	\caption{\normf 图像2的实验结果}
+	\label{fig:图像2的实验结果}
+	\end{figure}
+	\begin{figure}[h!]
+	\centering
+	\subfigure[\normf{畸变图像}]{
+		\centering
+		\includegraphics[width=0.41\linewidth]{images/test3.jpg}
+	}
+	\subfigure[\normf{去畸变图像}]{
+		\centering
+			\includegraphics[width=0.45\linewidth]{results/test3.jpg}
+		}
+	\caption{\normf 图像3的实验结果}
+	\label{fig:图像3的实验结果}
+	\end{figure}
+	\begin{figure}[h!]
+	\centering
+	\subfigure[\normf{畸变图像}]{
+		\centering
+		\includegraphics[width=0.45\linewidth]{images/board.jpg}
+	}
+	\subfigure[\normf{去畸变图像}]{
+		\centering
+			\includegraphics[width=0.45\linewidth]{results/board2-clip.jpg}
+		}
+	\caption{\normf 图像4的实验结果}
+	\label{fig:图像4的实验结果}
+	\end{figure}
+	
+	\section{\normf 总结}
+	该种基于霍夫变换的去畸变方法是一种稳健的
+	(半）自动校正图像和视频中的径向透镜畸变的方法。
+	该方法基于 Hough
+	变换，其特点是也适用于未知摄像机的视频，因此无法
+	先验校准。因此，该方法依赖于
+	假设，即纯径向畸变会将现实世界中的直线
+	为投影为曲线。畸变参数最佳值的计算
+	失真参数的最佳值是通过多分辨率
+	的方式进行。该方法的精度取决于多分辨率的尺度
+	多分辨率和 Hough 空间的分辨率。
+	
+	\section{\normf 附录}
+	表\ref{tab:运行环境}展示了本次编程的运行环境。
+	% Please add the following required packages to your document preamble:
+	% \usepackage{multirow}
+	\begin{table}[h]
+	\centering
+	\caption{\normf 运行环境}
+	\label{tab:运行环境}
+	\begin{tabular}{ccc|cl}
+	\midrule[1pt]
+	\multicolumn{1}{c|}{\multirow{2}{*}{Config.}} & OS name & Ubuntu 20.04.6 LTS & Processor          & 12th Gen Intel® Core™ i9-12900H × 20         \\ \cmidrule{2-5} 
+	\multicolumn{1}{c|}{}                         & OS Type & 64-bit             & Graphics           & Mesa Intel® Graphics (ADL GT2)               \\ \midrule[1pt]\midrule[1pt]
+	\multicolumn{3}{c|}{Library}                                                 & \multicolumn{2}{c}{Link}                                          \\ \midrule
+	\multicolumn{3}{c|}{OpenCV}                                                  & \multicolumn{2}{l}{https://github.com/opencv/opencv.git}          \\
+	\multicolumn{3}{c|}{OpenCV Contrib}                                          & \multicolumn{2}{l}{https://github.com/opencv/opencv\_contrib.git} \\ \midrule[1pt]
+	\end{tabular}
+	\end{table}
+	
+	\begin{lstlisting}[caption={\normf 标定算法实现}]
+def sfrs_calibrate(img):
+        rsz = cv2.resize(img, (0, 0), fx=.6, fy=.6)
+        k = conf.CAL_START_COEFF # modify k factor according to image size
+        res = {}
+        add_k = conf.CAL_COEFF_INC_FACTOR # modify add_k factor according to image size
+        for i in range(conf.CAL_EPOCH_NUMB):
+            # apply distortion with the current coeff k
+            c, _, _, _, _ = apply_distortion(rsz, k)
+            # get straight lines in the new image using hough
+            gray = cv2.cvtColor(c, cv2.COLOR_BGR2GRAY)
+            edges = cv2.Canny(gray, 20, 110)
+            lines = cv2.HoughLines(edges, 1, np.pi / 180, 160)
+            # evaluating distortion using number of lines
+            if lines is not None:
+                res[k] = len(lines)
+            else:
+                res[k] = 0
+            print("epoch: ", i, "k: ", float(k), "score: ", res[k])
+            k += add_k
+        best = max(res, key=res.get)
+        print("the winner is: ")
+        print("epoch: ", float(best), "score: ", res[best])
+        if float(best) != 0:
+            output, _, _, _, _ = apply_distortion(rsz, float(best))
+        else:
+            output = rsz
+        return output
+	\end{lstlisting}
+	
+	\begin{lstlisting}[caption={\normf 基于标定结果进行图像去畸变}]
+def apply_distortion(img, k1):
+    width = img.shape[1]
+    height = img.shape[0]
+    corr_x, corr_y = new_axes(0, 0, width // 2, height // 2, k1)
+    maxxu = int(corr_x)
+    maxyu = int(corr_y)
+    minytop = 0
+    minxlef = 0
+    minybot = 2 * maxyu
+    minxrig = 2 * maxxu
+    out_mat = np.zeros((2 * maxyu, 2 * maxxu, len(img.shape)), dtype="uint8")
+    for y_iter in range(2 * maxyu):
+        for x_iter in range(2 * maxxu):
+            xd = - maxxu + x_iter
+            yd = - maxyu + y_iter
+            if (xd == 0) and (yd == 0):
+                corr_x, corr_y = 0, 0
+            else:
+                corr_x, corr_y = inv_axes(0, 0, xd, yd, k1)
+            matxu = corr_x + width // 2
+            matyu = corr_y + height // 2
+            if len(img.shape) == 3:
+                if matxu >= width:
+                    out_mat[y_iter, x_iter, :] = 0
+                elif matyu >= height:
+                    out_mat[y_iter, x_iter, :] = 0
+                elif matxu <= 0:
+                    out_mat[y_iter, x_iter, :] = 0
+                elif matyu <= 0:
+                    out_mat[y_iter, x_iter, :] = 0
+                else:
+                    out_mat[y_iter, x_iter, np.newaxis] = img[matyu, matxu, :]
+            else:
+                if matxu >= width:
+                    out_mat[y_iter, x_iter] = 0
+                elif matyu >= height:
+                    out_mat[y_iter, x_iter] = 0
+                elif matxu <= 0:
+                    out_mat[y_iter, x_iter] = 0
+                elif matyu <= 0:
+                    out_mat[y_iter, x_iter] = 0
+                else:
+                    out_mat[y_iter, x_iter] = img[matyu, matxu]
+            if matyu == 0 and y_iter > minytop:
+                minytop = y_iter
+            elif matyu == height and y_iter < minybot:
+                minybot = y_iter
+            elif matxu == 0 and x_iter > minxlef:
+                minxlef = x_iter
+            elif matxu == width and x_iter < minxrig:
+                minxrig = x_iter
+    out_mat = np.uint8(out_mat[minytop:minybot, minxlef:minxrig])
+    return out_mat, minytop, minybot, minxlef, minxrig
+	\end{lstlisting}
+
 	\newpage
 	\bibliographystyle{IEEEtran}
 	\bibliography{reference}
