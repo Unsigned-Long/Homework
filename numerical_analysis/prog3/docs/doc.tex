@@ -1,0 +1,431 @@
+\documentclass[12pt, onecolumn]{article}
+
+% 引入相关的包
+\usepackage{amsmath, listings, fontspec, geometry, graphicx, ctex, color, subfigure, amsfonts, amssymb}
+\usepackage{multirow}
+\usepackage[table,xcdraw]{xcolor}
+\usepackage[ruled]{algorithm2e}
+\usepackage[hidelinks]{hyperref}
+
+		\usepackage{graphicx}
+		\usepackage[most]{tcolorbox}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=red,
+	citecolor=red,
+}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{picins}
+
+% 设定页面的尺寸和比例
+\geometry{left = 1.5cm, right = 1.5cm, top = 1.5cm, bottom = 1.5cm}
+
+% 设定两栏之间的间距
+\setlength\columnsep{1cm}
+
+% 设定字体，为代码的插入作准备
+\newfontfamily\ubuntu{Ubuntu Mono}
+\newfontfamily\consolas{Consolas}
+
+% 代码块的风格设定
+\lstset{
+	language=C++,
+	basicstyle=\small\ubuntu,
+	keywordstyle=\textbf,
+	stringstyle=\itshape,
+	commentstyle=\itshape,
+	numberstyle=\scriptsize\ubuntu,
+	showstringspaces=false,
+	numbers=left,
+	numbersep=8pt,
+	tabsize=2,
+	frame=single,
+	framerule=1pt,
+	columns=fullflexible,
+	breaklines,
+	frame=shadowbox, 
+	backgroundcolor=\color[rgb]{0.97,0.97,0.97}
+}
+
+% 字体族的定义
+% \fangsong \songti \heiti \kaishu
+\newcommand\normf{\fangsong}
+\newcommand\boldf{\heiti}
+\newcommand\keywords[1]{\boldf{关键词：} \normf #1}
+
+\newcommand\liehat[1]{\left[ #1 \right]_\times}
+\newcommand\lievee[1]{\left[ #1 \right]^\vee}
+\newcommand\liehatvee[1]{\left[ #1 \right]^\vee_\times}
+
+\newcommand\mlcomment[1]{\iffalse #1 \fi}
+%\newcommand\mlcomment[1]{ #1 }
+
+\newcounter{problemname}
+\newenvironment{problem}{\stepcounter{problemname}\par\noindent\normf\textbf{\textcolor[rgb]{1,0,0}{题目\arabic{problemname}.} }}{\leavevmode\\\par}
+\newenvironment{solution}{\par\noindent\normf\textbf{解答: }}{\leavevmode\\\par}
+\newenvironment{note}{\par\noindent\normf\textbf{题目\arabic{problemname}的注记: }}{\leavevmode\\\par}
+
+
+\begin{document}
+	\begin{titlepage}
+	    \centering
+	    \includegraphics[width=0.4\textwidth]{whu_red.png}\par\vspace{1cm}
+	    \vspace{4cm}
+	    {\huge\kaishu “数值分析”编程作业\par 多项式插值 \par}
+	    \vspace{3cm}
+	    {\Large\kaishu 
+	    \begin{center}\begin{tabular}{l}
+	    姓名：陈烁龙\\
+	    学号：\bfseries 2023202140019\\
+	    学院：测绘学院
+	    \end{tabular}\end{center}
+	     \par}
+	    
+	
+	    \vfill
+	
+	% Bottom of the page
+	    {\large\kaishu\bfseries \today\par}
+	\end{titlepage}
+		% 换页
+ 		\thispagestyle{empty}
+		\clearpage
+		
+		% 插入目录、图、表并换页
+		\pagenumbering{roman}
+		\tableofcontents
+		\newpage
+		\listoffigures
+		\newpage
+		\listoftables
+		% 罗马字母形式的页码
+		
+		\clearpage
+		% 从该页开始计数
+		\setcounter{page}{1}
+		% 阿拉伯数字形式的页码
+		\pagenumbering{arabic}
+	
+	\section{\normf{代码运行环境说明}}
+	
+		\normf\bfseries
+		表\ref{tab:代码运行环境}显示了本次编程测试的运行环境。本次代码使用\emph{CPP 17}实现，使用到了线性代数库\emph{Eigen}。代码虽然在\emph{Ubuntu}上实现， 但由于是\emph{Cmake}架构的项目，所以具有跨平台的特征，即可以在\emph{Windows}平台和\emph{Mac}上编译运行。
+		
+		绘图使用\emph{Python}中的\emph{matploylib}库实现，具体的绘图脚本在\emph{script}文件夹下。
+		
+		% Please add the following required packages to your document preamble:
+		% \usepackage{multirow}
+		\begin{table}[h]
+		\centering
+		\caption{\normf 代码运行环境}
+		\label{tab:代码运行环境}
+		\vspace{2mm}
+		\begin{tabular}{ccc|cl}
+		\toprule
+		\multicolumn{1}{c|}{\multirow{2}{*}{Config.}} & OS name & Ubuntu 20.04.6 LTS & Processor              & 12th Gen Intel® Core™ i9-12900H × 20              \\ \cmidrule{2-5} 
+		\multicolumn{1}{c|}{}                         & OS Type & 64-bit             & Graphics               & Mesa Intel® Graphics (ADL GT2)                    \\ \midrule[1pt]\midrule[1pt]
+		\multicolumn{3}{c|}{Library}                                                 & \multicolumn{2}{c}{Link}                                                   \\ \midrule
+		\multicolumn{3}{c|}{Eigen3}                                                  & \multicolumn{2}{c}{https://eigen.tuxfamily.org/index.php?title=Main\_Page}              \\ \bottomrule
+		\end{tabular}
+		\end{table}
+		
+	\section{\normf{拉格朗日重心插值}}
+	对于某个待插值函数$y=f(x)$，给定一组观测数据$\{(x_i,y_i)\mid i = 0,1,\cdots,n\}$，则基于拉格朗日多项式插值方法构造的$n$次插值多项式为：
+	\begin{equation}
+	\large
+	\mathcal{L}_n(x_i)=\sum_{i=0}^{n}\left( 
+	y_i\cdot l_i(x)
+	\right) =\sum_{i=0}^{n}\left( 
+		y_i\cdot\prod_{k=0,k\ne i}^{n}\frac{x-x_k}{x_i-x_k}
+		\right) 
+	\end{equation}
+	此即为经典的Lagrange插值算法。
+	
+	为对其进行改进、增强，有效克服一般插值方法的
+	振荡性和向前性，Jean-Paul Berrut 与 Lloyd N.	Trefethen共同提出了重心坐标拉
+	格郎日插值(Barycentric Lagrange Interpolation)。该方法具有计算精度高、不用划分网格、程序易实现等诸多优点，且当插值点较大时仍具有良好的数值稳定性。具体来说，令：
+	\begin{equation}
+	\large
+	\omega_{n+1}(x)=\prod_{k=0}^{n}(x-x_k)
+	\qquad
+	\omega_i=\prod_{k=0,k\ne i}^{n}\frac{1}{x_i-x_k}
+	\end{equation}
+	则有：
+	\begin{equation}
+	\large
+	\mathcal{L}_n(x_i)=\sum_{i=0}^{n}\left( 
+		y_i
+		\cdot\frac{\omega_{n+1}(x)}{x-x_i}
+		\cdot\prod_{k=0,k\ne i}^{n}\frac{1}{x_i-x_k}
+		\right) =\omega_{n+1}(x)\cdot\sum_{i=0}^{n}\left( 
+				\frac{\omega_i}{x-x_i}\cdot y_i
+				\right)
+	\end{equation}
+	此即为第一类重心公式。注意到对于这种格式，当给定观测数据后，$\omega_i$被唯一确定。
+	
+	另外，由于拉格朗日基函数和为1，有：
+	\begin{equation}
+	\large
+	1=\sum_{i=0}^{n}l_i(x)=\omega_{n+1}(x)\cdot\sum_{i=0}^{n}\left( 
+					\frac{\omega_i}{x-x_i}
+					\right)
+					\Rightarrow
+	\omega_{n+1}(x)=\frac{1}{\begin{aligned}
+	\sum_{i=0}^{n}\left( 
+						\frac{\omega_i}{x-x_i}
+						\right)
+	\end{aligned}}
+	\end{equation}
+	所以有：
+	\begin{equation}
+	\large
+	\mathcal{L}_n(x_i)=\frac{\begin{aligned}
+	\sum_{i=0}^{n}\left( 
+					\frac{\omega_i}{x-x_i}\cdot y_i
+					\right)
+	\end{aligned}}{\begin{aligned}
+		\sum_{i=0}^{n}\left( 
+							\frac{\omega_i}{x-x_i}
+							\right)
+		\end{aligned}}
+	\end{equation}
+	此即为第二类重心公式。相较于第一类重心公式，更加常用。其不仅有对称性，还有数值稳定性(当$x\to x_i$时，分子分母同时很大，抵消了不稳定性)。
+	
+	\section{\normf{Chebyshev插值点选取}}
+	在区间$[-1,1]$上，选取$n$个插值点，使得：
+	\begin{equation}
+	\large
+	\max\left| (x-x_1)\times\cdots\times(x-x_n)\right| 
+	\end{equation}
+	尽可能小，则有：
+	\begin{equation}
+	\large
+	x_i=\cos \frac{\left( 2i-1\right)\pi }{2n},i=1,\cdots,n
+	\end{equation}
+	插值点集$\{x_i\mid i=1,\cdots,n\}$即为Chebyshev插值点。当在区间$[a,b]$上进行Chebyshev插值点计算时，只需要进行区间线性缩放即可：
+	\begin{equation}
+	\large
+	x_i=\frac{a+b}{2}+\frac{b-a}{2}\times\cos \frac{\left( 2i-1\right)\pi }{2n},i=1,\cdots,n
+	\end{equation}
+	
+	\section{\normf{插值测试}}
+	\subsection{\normf{Rongo函数}}
+	\begin{equation}
+	\large
+	f(x)=\frac{1}{1+x^2}\quad x\in[-5,5]
+	\end{equation}
+	分别对该函数选取了30、50、70、100的等距节点和Chebyshev节点进行拉格朗日重心插值，结果如图\ref{fig:Rongo函数的重心拉格朗日插值结果}所示。
+	\begin{figure}[h!]
+	\centering
+	\subfigure[\normf{30个插值节点的插值结果}]{
+		\centering
+		\includegraphics[width=0.8\linewidth]{../data/rongo/results30.pdf}
+	}
+	\subfigure[\normf{50个插值节点的插值结果}]{
+		\centering
+		\includegraphics[width=0.8\linewidth]{../data/rongo/results50.pdf}
+	}
+	\subfigure[\normf{70个插值节点的插值结果}]{
+		\centering
+		\includegraphics[width=0.8\linewidth]{../data/rongo/results70.pdf}
+	}
+	\subfigure[\normf{100个插值节点的插值结果}]{
+		\centering
+		\includegraphics[width=0.8\linewidth]{../data/rongo/results100.pdf}
+	}
+	\caption{\normf Rongo函数的重心拉格朗日插值结果}
+	\label{fig:Rongo函数的重心拉格朗日插值结果}
+	\end{figure}
+	
+	\subsection{\normf{三角函数}}
+	\begin{equation}
+	\large
+	f(x)=\sin x\quad x\in[-5,5]
+	\end{equation}
+	分别对该函数选取了30、50、70、100的等距节点和Chebyshev节点进行拉格朗日重心插值，结果如图\ref{fig:三角函数的重心拉格朗日插值结果}所示。
+	\begin{figure}[h!]
+	\centering
+	\subfigure[\normf{30个插值节点的插值结果}]{
+		\centering
+		\includegraphics[width=0.8\linewidth]{../data/sinx/results30.pdf}
+	}
+	\subfigure[\normf{50个插值节点的插值结果}]{
+		\centering
+		\includegraphics[width=0.8\linewidth]{../data/sinx/results50.pdf}
+	}
+	\subfigure[\normf{70个插值节点的插值结果}]{
+		\centering
+		\includegraphics[width=0.8\linewidth]{../data/sinx/results70.pdf}
+	}
+	\subfigure[\normf{100个插值节点的插值结果}]{
+		\centering
+		\includegraphics[width=0.8\linewidth]{../data/sinx/results100.pdf}
+	}
+	\caption{\normf 三角函数的重心拉格朗日插值结果}
+	\label{fig:三角函数的重心拉格朗日插值结果}
+	\end{figure}
+	
+	\subsection{\normf{指数函数}}
+	\begin{equation}
+	\large
+	f(x)=e^x\quad x\in[-5,5]
+	\end{equation}
+	分别对该函数选取了30、50、70、100的等距节点和Chebyshev节点进行拉格朗日重心插值，结果如图\ref{fig:指数函数的重心拉格朗日插值结果}所示。
+	\begin{figure}[h!]
+	\centering
+	\subfigure[\normf{30个插值节点的插值结果}]{
+		\centering
+		\includegraphics[width=0.8\linewidth]{../data/ex/results30.pdf}
+	}
+	\subfigure[\normf{50个插值节点的插值结果}]{
+		\centering
+		\includegraphics[width=0.8\linewidth]{../data/ex/results50.pdf}
+	}
+	\subfigure[\normf{70个插值节点的插值结果}]{
+		\centering
+		\includegraphics[width=0.8\linewidth]{../data/ex/results70.pdf}
+	}
+	\subfigure[\normf{100个插值节点的插值结果}]{
+		\centering
+		\includegraphics[width=0.8\linewidth]{../data/ex/results100.pdf}
+	}
+	\caption{\normf 指数函数的重心拉格朗日插值结果}
+	\label{fig:指数函数的重心拉格朗日插值结果}
+	\end{figure}
+	
+	\subsection{\normf{对数函数}}
+	\begin{equation}
+	\large
+	f(x)=\ln\left( 1+x^2\right) \quad x\in[-5,5]
+	\end{equation}
+	分别对该函数选取了30、50、70、100的等距节点和Chebyshev节点进行拉格朗日重心插值，结果如图\ref{fig:对数函数的重心拉格朗日插值结果}所示。
+	\begin{figure}[h!]
+	\centering
+	\subfigure[\normf{30个插值节点的插值结果}]{
+		\centering
+		\includegraphics[width=0.8\linewidth]{../data/ln/results30.pdf}
+	}
+	\subfigure[\normf{50个插值节点的插值结果}]{
+		\centering
+		\includegraphics[width=0.8\linewidth]{../data/ln/results50.pdf}
+	}
+	\subfigure[\normf{70个插值节点的插值结果}]{
+		\centering
+		\includegraphics[width=0.8\linewidth]{../data/ln/results70.pdf}
+	}
+	\subfigure[\normf{100个插值节点的插值结果}]{
+		\centering
+		\includegraphics[width=0.8\linewidth]{../data/ln/results100.pdf}
+	}
+	\caption{\normf 对数函数的重心拉格朗日插值结果}
+	\label{fig:对数函数的重心拉格朗日插值结果}
+	\end{figure}
+	
+	\subsection{\normf{绝对值函数}}
+	\begin{equation}
+	\large
+	f(x)=\left| x\right| \quad x\in[-5,5]
+	\end{equation}
+	分别对该函数选取了30、50、70、100的等距节点和Chebyshev节点进行拉格朗日重心插值，结果如图\ref{fig:绝对值函数的重心拉格朗日插值结果}所示。
+	\begin{figure}[h!]
+	\centering
+	\subfigure[\normf{30个插值节点的插值结果}]{
+		\centering
+		\includegraphics[width=0.8\linewidth]{../data/abs/results30.pdf}
+	}
+	\subfigure[\normf{50个插值节点的插值结果}]{
+		\centering
+		\includegraphics[width=0.8\linewidth]{../data/abs/results50.pdf}
+	}
+	\subfigure[\normf{70个插值节点的插值结果}]{
+		\centering
+		\includegraphics[width=0.8\linewidth]{../data/abs/results70.pdf}
+	}
+	\subfigure[\normf{100个插值节点的插值结果}]{
+		\centering
+		\includegraphics[width=0.8\linewidth]{../data/abs/results100.pdf}
+	}
+	\caption{\normf 绝对值函数的重心拉格朗日插值结果}
+	\label{fig:绝对值函数的重心拉格朗日插值结果}
+	\end{figure}
+	
+	\section{\normf{结果分析}}
+	从5个函数的插值结果可以看出，在进行拉格朗日插值时，等距节点和Chebyshev节点的区别在于，等距节点是在插值区间上等距离地选取插值点，而Chebyshev节点是在插值区间上选取使得插值多项式的最大误差最小的插值点。等距节点的优点是容易计算，但是在插值区间的两端，多项式插值的误差会很大，即所谓的Runge现象。该现象表明,在
+	大范围内使用高次
+	插值,逼近的效果往
+	往是不理想的。而Chebyshev节点的优点是可以避免Runge现象，但是计算比较复杂。因此，在实际应用中，需要根据具体问题的特点来选择合适的插值节点。
+	
+	\section{\normf{附录}}
+	\begin{lstlisting}[caption=\normf LagrangeInterpolation类实现]
+    ns_na::LagrangeInterpolation::LagrangeInterpolation(const std::vector<Observation> &observations)
+            : obsVec(observations), omegas(observations.size()) {
+        for (int i = 0; i < static_cast<int>(obsVec.size()); ++i) {
+            double omegaInv = 1.0;
+            for (int k = 0; k < static_cast<int>(obsVec.size()); ++k) {
+                if (k == i) { continue; }
+                omegaInv *= obsVec.at(i).x - obsVec.at(k).x;
+            }
+            omegas.at(i) = 1.0 / omegaInv;
+        }
+        // LOG_VAR(omegas)
+    }
+
+    Observation LagrangeInterpolation::operator()(double x) const {
+        for (const auto &obv: obsVec) { if (std::abs(x - obv.x) < 1E-10) { return obv; }}
+        double v1 = 0.0, v2 = 0.0;
+        for (int i = 0; i < static_cast<int>(obsVec.size()); ++i) {
+            double v3 = omegas.at(i) / (x - obsVec.at(i).x);
+            v1 += v3 * obsVec.at(i).y;
+            v2 += v3;
+        }
+        return {x, v1 / v2};
+    }
+
+    Observations LagrangeInterpolation::operator()(const std::vector<double> &xVec) const {
+        Observations resVec(xVec.size());
+        for (int i = 0; i < static_cast<int>(xVec.size()); ++i) {
+            resVec.at(i) = this->operator()(xVec.at(i));
+        }
+        return resVec;
+    }
+	\end{lstlisting}
+	\begin{lstlisting}[caption=\normf Chebyshev节点和等距节点生成函数]
+    std::vector<double> ChebyshevPoints(double a, double b, int n) {
+        double v1 = (a + b) * 0.5, v2 = (b - a) * 0.5;
+        std::vector<double> points(n);
+        for (int i = 1; i <= n; ++i) {
+            points.at(i - 1) = v1 + v2 * std::cos((2.0 * i - 1) * M_PI / (2.0 * n));
+        }
+        return points;
+    }
+
+    std::vector<double> AveragePoints(double a, double b, int n) {
+        std::vector<double> points(n);
+        double delta = (b - a) / (n - 1);
+        double v = a;
+        for (int i = 0; i < n; ++i) {
+            points.at(i) = v;
+            v += delta;
+        }
+        return points;
+    }
+	\end{lstlisting}
+	
+	
+	\newpage
+	\section*{ACKNOWLEDGMENT}
+	\begin{tcolorbox}[colback=white,colframe=white!70!black,title={\bfseries Author Information}]
+	\par\noindent
+		\parbox[t]{\linewidth}{
+	 \noindent\parpic{\includegraphics[height=2in,width=1in,clip,keepaspectratio]{ShuolongChen_grey.jpg}}
+	 \noindent{\bfseries Shuolong Chen}\emph{
+	 received the B.S. degree in geodesy and geomatics engineering from Wuhan University, Wuhan China, in 2023.
+	 He is currently a master candidate at the school of Geodesy and Geomatics, Wuhan University. His area of research currently focuses on integrated navigation systems and multi-sensor fusion.
+	 Contact him via e-mail: shlchen@whu.edu.cn.
+	 }}
+	\end{tcolorbox}
+		
+		
+\end{document}
+
