@@ -1,0 +1,319 @@
+\documentclass[12pt, onecolumn]{article}
+
+% 引入相关的包
+\usepackage{amsmath, listings, fontspec, geometry, graphicx, ctex, color, subfigure, amsfonts, amssymb}
+\usepackage{multirow}
+\usepackage[table,xcdraw]{xcolor}
+\usepackage[ruled]{algorithm2e}
+\usepackage[hidelinks]{hyperref}
+
+		\usepackage{graphicx}
+		\usepackage[most]{tcolorbox}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=red,
+	citecolor=red,
+}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{picins}
+
+% 设定页面的尺寸和比例
+\geometry{left = 1.5cm, right = 1.5cm, top = 1.5cm, bottom = 1.5cm}
+
+% 设定两栏之间的间距
+\setlength\columnsep{1cm}
+
+% 设定字体，为代码的插入作准备
+\newfontfamily\ubuntu{Ubuntu Mono}
+\newfontfamily\consolas{Consolas}
+
+% 头部信息
+\title{\normf{编程：观测值逐次更新的扩展卡尔曼滤波器}}
+\author{\normf 姓名：陈烁龙\;\;\;学号：2023202140019\;\;\;学院：测绘学院}
+\date{\normf{\today}}
+
+% 代码块的风格设定
+\lstset{
+	language=C++,
+	basicstyle=\small\ubuntu,
+	keywordstyle=\textbf,
+	stringstyle=\itshape,
+	commentstyle=\itshape,
+	numberstyle=\scriptsize\ubuntu,
+	showstringspaces=false,
+	numbers=left,
+	numbersep=8pt,
+	tabsize=2,
+	frame=single,
+	framerule=1pt,
+	columns=fullflexible,
+	breaklines,
+	frame=shadowbox, 
+	backgroundcolor=\color[rgb]{0.97,0.97,0.97}
+}
+
+% 字体族的定义
+% \fangsong \songti \heiti \kaishu
+\newcommand\normf{\fangsong}
+\newcommand\boldf{\heiti}
+\newcommand\keywords[1]{\bfseries{关键词：} \normf #1}
+
+\newcommand\liehat[1]{\left[ #1 \right]_\times}
+\newcommand\lievee[1]{\left[ #1 \right]^\vee}
+\newcommand\liehatvee[1]{\left[ #1 \right]^\vee_\times}
+\newcommand\bsm[1]{\boldsymbol{\mathrm{#1}}}
+\newcommand\mlcomment[1]{\iffalse #1 \fi}
+%\newcommand\mlcomment[1]{ #1 }
+
+\newcounter{problemname}
+\newenvironment{problem}{\stepcounter{problemname}\par\noindent\normf\textbf{\textcolor[rgb]{1,0,0}{题目\arabic{problemname}.} }}{\leavevmode\\\par}
+\newenvironment{solution}{\par\noindent\normf\textbf{解答: }}{\leavevmode\\\par}
+\newenvironment{note}{\par\noindent\normf\textbf{题目\arabic{problemname}的注记: }}{\leavevmode\\\par}
+\begin{document}
+	\begin{titlepage}
+	    \centering
+	    \includegraphics[width=0.4\textwidth]{whu_red.png}\par\vspace{1cm}
+	    \vspace{4cm}
+	    {\huge\kaishu\bfseries 数值分析习题 \par}
+	    \vspace{3cm}
+	    {\Large\kaishu 
+	    \begin{center}\begin{tabular}{l}
+	    姓名：陈烁龙\\
+	    学号：\bfseries 2023202140019\\
+	    学院：测绘学院
+	    \end{tabular}\end{center}
+	     \par}
+	    
+	
+	    \vfill
+	
+	% Bottom of the page
+	    {\large\kaishu\bfseries \today\par}
+	\end{titlepage}
+		% 换页
+ 		\thispagestyle{empty}
+		\clearpage
+		
+		% 插入目录、图、表并换页
+		\pagenumbering{roman}
+		\tableofcontents
+		\newpage
+		\listoffigures
+%		\newpage
+%		\listoftables
+		% 罗马字母形式的页码
+		
+		\clearpage
+		% 从该页开始计数
+		\setcounter{page}{1}
+		% 阿拉伯数字形式的页码
+		\pagenumbering{arabic}
+	
+	
+	\section{\normf{绪论}}
+	\normf\bfseries
+	\problem{...}
+	\solution{
+	已知：
+	\begin{equation}
+		\arctan x\approx x-\frac{1}{3}x^3+\frac{1}{5}x^5
+	\end{equation}
+	所以
+	\begin{equation}
+		4\times\left( \arctan \frac{1}{2}+\arctan\frac{1}{3}\right) \approx
+		4\times\left( \frac{1}{2}-\frac{1}{3}\times\frac{1}{8}
+		+\frac{1}{5}\times\frac{1}{32}
+		+\frac{1}{3}-\frac{1}{3}\times\frac{1}{27}+\frac{1}{5}\times\frac{1}{243}
+		\right) =3.145576132
+	\end{equation}
+	而$\pi=3.141592653...$，所以有绝对误差：
+	\begin{equation}
+	e_{abs}= x^*-x\approx 3.145576132-3.141592653=0.003983479
+	\end{equation}
+	相对误差为：
+	\begin{equation}
+	e_{rel}=\frac{x^*-x}{x}\approx\frac{0.003983479}{\pi}\approx 0.001267980=0.1267980\%
+	\end{equation}
+	}
+	
+	\problem{...}
+	\solution{
+	当$\tilde{\bsm{x}}_1=\begin{pmatrix}
+	1&0
+	\end{pmatrix}^\top$时，有：
+	\begin{equation}
+	\bsm{b}-\bsm{A}\tilde{\bsm{x}_1}=\begin{pmatrix}
+	1\\1
+	\end{pmatrix}-\begin{pmatrix}
+	1&0.99\\0.99&0.98
+	\end{pmatrix}\begin{pmatrix}
+		1\\0
+		\end{pmatrix}=\begin{pmatrix}
+		0\\0.01
+		\end{pmatrix}
+	\qquad \Vert\bsm{b}-\bsm{A}\tilde{\bsm{x}_1}\Vert_{\infty}=\max\vert x_i\vert=0.01
+	\end{equation}
+	所以有：
+	\begin{equation}
+		\frac{\Vert\bsm{b}-\bsm{A}\tilde{\bsm{x}_1}\Vert_{\infty}}{\Vert\bsm{b}\Vert_{\infty}}=\frac{0.01}{1}=0.01
+		\qquad
+		\frac{\Vert\delta\tilde{\bsm{x}_1}\Vert_{\infty}}{\Vert\bsm{x}^*\Vert_{\infty}}=\frac{100}{100}=1
+	\end{equation}
+	同理可得：
+	\begin{equation}
+	\frac{\Vert\bsm{b}-\bsm{A}\tilde{\bsm{x}_2}\Vert_{\infty}}{\Vert\bsm{b}\Vert_{\infty}}=\frac{0.995}{1}=0.995
+			\qquad
+			\frac{\Vert\delta\tilde{\bsm{x}_2}\Vert_{\infty}}{\Vert\bsm{x}^*\Vert_{\infty}}=\frac{0.5}{100}=0.005
+	\end{equation}
+	
+	另外有：
+	\begin{equation}
+	\mathrm{cond}_{\infty}(\bsm{A})=\Vert\bsm{A}\Vert_{\infty}\cdot\Vert\bsm{A}^{-1}\Vert_{\infty}=\Vert
+	\frac{1}{0.0001}
+	\begin{pmatrix}
+	0.98&-0.99\\
+	-0.99&1
+	\end{pmatrix}
+	\Vert_{\infty}=10000
+	\end{equation}
+	}
+	空间矩阵$\bsm{A}$的条件数大于1。条件数比较大时，矩阵是病态矩阵，相应的方程组是病态方程组。因为有：
+	\begin{equation}
+	\begin{aligned}
+	\bsm{A}(\bsm{x}+\delta \bsm{x})&=b+\delta \bsm{b}
+	\\
+	\delta \bsm{x}&=\bsm{A}^{-1}\cdot\delta\bsm{b}
+	\\
+	\Vert\delta\bsm{x}\Vert_{\infty}&\le\Vert\bsm{A}^{-1}\Vert_{\infty}\cdot\Vert\delta\bsm{b}\Vert_{\infty}
+	\\
+	since\;\;\Vert\bsm{b}\Vert_{\infty}&=\Vert\bsm{Ax}\Vert_{\infty}\le\Vert\bsm{A}\Vert_{\infty}\cdot\Vert\bsm{x}\Vert_{\infty}
+	\\
+	\frac{1}{\Vert\bsm{x}\Vert_{\infty}}&\le\frac{\Vert\bsm{A}\Vert_{\infty}}{\Vert\bsm{b}\Vert_{\infty}}
+	\\
+	thus\;\;
+	\frac{\Vert\delta\bsm{x}\Vert_{\infty}}{\Vert\bsm{x}\Vert_{\infty}}&\le
+	\Vert\bsm{A}\Vert_{\infty}\cdot\Vert\bsm{A}^{-1}\Vert_{\infty}\cdot\frac{\Vert\delta\bsm{b}\Vert_{\infty}}{\Vert\bsm{b}\Vert_{\infty}}
+	\end{aligned}
+	\end{equation}
+	所以有：
+	\begin{equation}
+	1\le 10000\times 0.01=100
+	\qquad
+	0.005\le 10000\times 0.995=9950
+	\end{equation}
+	
+	\section{\normf{直接法解线性方程组}}
+	\problem{...}
+	\solution{
+	列主元消去法：在第k步消元前，在系数矩阵第k列的对角线以下的元素
+	中找出绝对值最大的元。交换方程后，再继续消去计算.
+	\begin{equation*}
+	\begin{pmatrix}
+	3&2&1\\
+	1&0&1\\
+	12&-3&3
+	\end{pmatrix}\begin{pmatrix}
+	x_1\\x_2\\x_3
+	\end{pmatrix}=\begin{pmatrix}
+	4\\2\\15
+	\end{pmatrix}
+	\qquad
+		\begin{pmatrix}
+		12&-3&3\\
+		3&2&1\\
+		1&0&1\\
+		\end{pmatrix}\begin{pmatrix}
+		x_3\\x_2\\x_1
+		\end{pmatrix}=\begin{pmatrix}
+		15\\4\\2
+		\end{pmatrix}
+	\end{equation*}
+	\begin{equation*}
+		\begin{pmatrix}
+		1&-\frac{1}{4}&\frac{1}{4}\\
+		3&2&1\\
+		1&0&1\\
+		\end{pmatrix}\begin{pmatrix}
+		x_3\\x_2\\x_1
+		\end{pmatrix}=\begin{pmatrix}
+		\frac{5}{4}\\4\\2
+		\end{pmatrix}
+		\qquad
+		\begin{pmatrix}
+		1&-\frac{1}{4}&\frac{1}{4}\\
+		0&\frac{5}{4}&\frac{1}{4}\\
+		0&\frac{1}{4}&\frac{3}{4}\\
+		\end{pmatrix}\begin{pmatrix}
+		x_3\\x_2\\x_1
+		\end{pmatrix}=\begin{pmatrix}
+		\frac{5}{4}\\\frac{1}{4}\\\frac{3}{4}
+		\end{pmatrix}
+	\end{equation*}
+	\begin{equation*}
+		\begin{pmatrix}
+		1&-\frac{1}{4}&\frac{1}{4}\\
+		0&1&\frac{1}{5}\\
+		0&0&\frac{7}{10}\\
+		\end{pmatrix}\begin{pmatrix}
+		x_3\\x_2\\x_1
+		\end{pmatrix}=\begin{pmatrix}
+		\frac{5}{4}\\\frac{1}{5}\\\frac{7}{10}
+		\end{pmatrix}
+		\qquad
+		\begin{pmatrix}
+		1&-\frac{1}{4}&\frac{1}{4}\\
+		0&1&\frac{1}{5}\\
+		0&0&1\\
+		\end{pmatrix}\begin{pmatrix}
+		x_3\\x_2\\x_1
+		\end{pmatrix}=\begin{pmatrix}
+		\frac{5}{4}\\\frac{1}{5}\\1
+		\end{pmatrix}
+	\end{equation*}
+	所以有：
+	\begin{equation}
+	x_1=1\qquad x_2=\frac{1}{5}-\frac{1}{5}\times x_1=0
+	\qquad
+	x_3=\frac{5}{4}+\frac{1}{4}\times x_2-\frac{1}{4}\times x_1=1
+	\end{equation}
+	}
+	
+	\problem{...}
+	\solution{
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+		
+	\newpage
+	\section*{ACKNOWLEDGMENT}
+	\begin{tcolorbox}[colback=white,colframe=white!70!black,title={\bfseries Author Information}]
+	\par\noindent
+		\parbox[t]{\linewidth}{
+	 \noindent\parpic{\includegraphics[height=2in,width=1in,clip,keepaspectratio]{ShuolongChen_grey.jpg}}
+	 \noindent{\bfseries Shuolong Chen}\emph{
+	 received the B.S. degree in geodesy and geomatics engineering from Wuhan University, Wuhan China, in 2023.
+	 He is currently a master candidate at the school of Geodesy and Geomatics, Wuhan University. His area of research currently focuses on integrated navigation systems and multi-sensor fusion.
+	 Contact him via e-mail: shlchen@whu.edu.cn.
+	 }}
+	\end{tcolorbox}
+		
+		
+\end{document}
