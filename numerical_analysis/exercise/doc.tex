@@ -283,24 +283,205 @@
 	\solution{
 	}
 	
+	\section{\normf{数值微分和积分}}
+	\problem{...}
+	\solution{
+	中心差分法
+	\begin{equation}
+	f^\prime(x)=\frac{1}{2\sqrt{x}}=\frac{\sqrt{2}}{4}
+	\approx\frac{f(x+h)-f(x-h)}{2\times h}=
+	\frac{\sqrt{2.1}-\sqrt{1.9}}{0.2}=0.353663997
+	\end{equation}
+	}
 	
+	\problem{...}
+	\solution{
+	使用梯形公式计算积分:
+	\begin{equation}
+	\int_{0}^{1}\left(1-e^{-x} \right)^{\frac{1}{2}}dx
+	\approx
+	\frac{1-0}{2}\cdot\left(
+	\left(1-e^{0} \right)^{\frac{1}{2}}+
+	\left(1-e^{-1} \right)^{\frac{1}{2}}
+	\right)  =0.397530048
+	\end{equation}
+	}
 	
+	\problem{...}
+	\solution{
+	使用 Simpson 公式计算积分:
+	\begin{equation}
+	\int_{0}^{1}e^{-x}dx=\left[-e^{-x} \right]_0^1=0.632120558 
+	\approx
+	\frac{1-0}{6}\cdot\left(
+	e^{0}+4\cdot e^{-\frac{0+1}{2}}+e^{-1}
+	\right) =0.63233368
+	\end{equation}
+	误差为：
+	\begin{equation}
+	R(f)=-\frac{1}{90}h^5f^{(4)}(\xi)=-\frac{e^{-\xi}}{90} 
+	\quad\xi\in[0,1]
+	\end{equation}
+	}
+
 	
+	\problem{...}
+	\solution{
+	Simpson 公式计算积分:
+	\begin{equation}
+	\begin{aligned}
+	\int_{0.4}^{0.6}\frac{1}{1+x}dx&=\left[\ln(1+x) \right]_{0.4}^{0.6}=0.133531392\\
+		&\approx
+		\frac{0.6-0.4}{6}\cdot\left(
+		\frac{1}{1+0.4}+4\cdot \frac{1}{1+\frac{0.4+0.6}{2}}+\frac{1}{1+0.6}
+		\right) =0.133531746
+	\end{aligned}
+	\end{equation}
+	}
 	
+	\problem{...}
+	\solution{
+	$h=0.1$,有
+	\begin{equation}
+	\begin{array}{c|ccccccccccc}
+    x&0&0.1&0.2&0.3&0.4&0.5&0.6&0.7&0.8&0.9&1.0
+    \\\hline
+    -x^2&0&-0.01&-0.04&-0.09&-0.16&-0.25&-0.36&-0.49&-0.64&-0.81&-1.0
+    \\\hline
+    e^{-x^2}&
+	\end{array}
+	\end{equation}
+	\begin{equation}
+	\int_{0}^{1}e^{-x^2}dx\approx
+	0.05\cdot\left[ f(0)+f(1)+2\cdot\left( f(0.1)+\cdots+f(0.9)\right) \right] 
+	\end{equation}
+	}
 	
+	\problem{...}
+	\solution{
+	使用复化梯形公式计算下列积分：
+	\begin{equation}
+	\int_{0}^{1}\frac{x}{4+x^2}dx,n=8
+	\qquad
+	\int_{0}^{1}\frac{(1-e^{-x})^{1/2}}{x}dx,n=10
+	\end{equation}
+	}
 	
+	\problem{...}
+	\solution{
+	用复化 Simpson 公式计算下列积分：
+	\begin{equation}
+	\int_{1}^{9}\sqrt{x}dx,n=2
+	\qquad
+	\int_{0}^{\frac{\pi}{6}}\sqrt{-\sin^2\phi}d\phi,n=3
+	\end{equation}
+	}
 	
+	\problem{...}
+	\solution{
+	用复化 Simpson 公式计算积分近似值，并估计误差：
+	\begin{equation}
+	\int_{1}^{1.8}\sqrt{x}dx,n=5
+	\end{equation}
+	}
 	
+	\problem{...}
+	\solution{
+	$f(x)$的值如下表所示, 分别用复化梯形公式和复化 Simpson 公式计算积分$\int_{1.0}^{1.8}f(x)dx$的近似值：
+	\begin{equation}
+	\begin{array}{c|ccccccccc}
+	x&1.0&1.1&1.2&1.3&1.4&1.5&1.6&1.7&1.8
+	\\\hline
+	f(x)&3&5&2&1&-3&-2&1&-1&2
+	\end{array}
+	\end{equation}
+	$h=0.1$,复化梯形公式:
+	\begin{equation}
+	T_8=0.05\cdot\left( 3+2+2\cdot 3\right) =0.55
+	\end{equation}
+	$h=0.1$,复化 Simpson 公式:
+	\begin{equation}
+	S_4=\frac{0.1}{3}\cdot\left(3+2+4\cdot 3+2\cdot 0\right) =0.5666666
+	\end{equation}
+	}
 	
+	\problem{...}
+	\solution{
+	使用龙贝格方法计算积分：
+	\begin{equation}
+	\int_{0}^{1}\frac{4}{1+x^2}dx
+	\end{equation}
+	易得：
+	\begin{equation}
+	T_0(0)=0.5\cdot(4+2)=3\qquad T_0(1)=0.5\cdot3+0.5\cdot f(0.5)=3.1\qquad
+	T_1(0)=(4\cdot 3.1-3)/3=3.13333
+	\end{equation}
+	}
 	
+	\problem{...}
+	\solution{
+	使用龙贝格方法计算积分：
+	\begin{equation}
+	\frac{2}{x}\int_{0}^{1}e^{-x}dx
+	\end{equation}
+	}
 	
+	\problem{...}
+	\solution{
+	使用龙贝格方法计算积分：
+		\begin{equation}
+		\int_{0}^{1}\sqrt{x}dx
+		\end{equation}
+	}
+	\problem{...}
+	\solution{
+	分别令$f(x)$等于$1,x,x^2$，得到：
+	\begin{equation}
+	\int_{0}^{2} xdx=2=x_1+x_2
+	\qquad
+	\int_{0}^{2}x^2dx=\frac{8}{3}=x_1^2+x_2^2
+	\end{equation}
+	}
 	
+	\problem{...}
+	\solution{
+	分别令$f(x)$等于$1,x,x^2,x^3$，得到：
+	\begin{equation}
+	\int_{-3}^{3} xdx=0=A\cdot (-\alpha)+C\cdot\alpha
+	\qquad
+	\int_{-3}^{3}x^2dx=18=A\cdot\alpha^2+C\cdot\alpha^2
+	\end{equation}
+	\begin{equation*}
+	\int_{-3}^{3}x^3dx=0=A\cdot\alpha^3+C\cdot\alpha^3
+	\end{equation*}
+	}
 	
-	
-	
-	
-	
-	
+	\problem{...}
+	\solution{
+	用三点高斯-勒让德公式计算下列积分:
+	\begin{equation}
+	\int_{-1}^{1}e^{-x^2}dx\approx
+	\frac{5}{9}\cdot \mathrm{Exp}\left( {-\left( -\sqrt{\frac{3}{5}}\right)^2 }\right) 
+	+\frac{8}{9}+\frac{5}{9}\cdot\mathrm{Exp}\left( {-\left( \sqrt{\frac{3}{5}}\right)^2 }\right) =1.498679596
+	\end{equation}
+	用三点高斯-勒让德公式计算下列积分:
+	\begin{equation}
+	\int_{0}^{1}\sin x^2dx
+	\end{equation}
+	首先进行归化$x=\frac{1}{2}(t-1)$：
+	\begin{equation}
+	\int_{-1}^{1}\frac{1}{2}\cdot\sin \left( \frac{1}{4}\left(t+1 \right) ^2\right) dt
+	\end{equation}
+	}
+
+	\problem{...}
+	\solution{
+	用三点高斯-勒让德公式计算:
+	\begin{equation}
+	\int_{0}^{1}\frac{\sin x}{x}dx \Rightarrow\int_{-1}^{1}\frac{\sin \frac{1}{2}(t-1)}{t-1}dt
+	\end{equation}
+	}
+
 		
 	\newpage
 	\section*{ACKNOWLEDGMENT}

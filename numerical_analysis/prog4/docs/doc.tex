@@ -1,0 +1,316 @@
+\documentclass[12pt, onecolumn]{article}
+
+% 引入相关的包
+\usepackage{amsmath, listings, fontspec, geometry, graphicx, ctex, color, subfigure, amsfonts, amssymb}
+\usepackage{multirow}
+\usepackage[table,xcdraw]{xcolor}
+\usepackage[ruled]{algorithm2e}
+\usepackage[hidelinks]{hyperref}
+
+		\usepackage{graphicx}
+		\usepackage[most]{tcolorbox}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=red,
+	citecolor=red,
+}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{picins}
+
+% 设定页面的尺寸和比例
+\geometry{left = 1.5cm, right = 1.5cm, top = 1.5cm, bottom = 1.5cm}
+
+% 设定两栏之间的间距
+\setlength\columnsep{1cm}
+
+% 设定字体，为代码的插入作准备
+\newfontfamily\ubuntu{Ubuntu Mono}
+\newfontfamily\consolas{Consolas}
+
+% 代码块的风格设定
+\lstset{
+	language=C++,
+	basicstyle=\small\ubuntu,
+	keywordstyle=\textbf,
+	stringstyle=\itshape,
+	commentstyle=\itshape,
+	numberstyle=\scriptsize\ubuntu,
+	showstringspaces=false,
+	numbers=left,
+	numbersep=8pt,
+	tabsize=2,
+	frame=single,
+	framerule=1pt,
+	columns=fullflexible,
+	breaklines,
+	frame=shadowbox, 
+	backgroundcolor=\color[rgb]{0.97,0.97,0.97}
+}
+
+% 字体族的定义
+% \fangsong \songti \heiti \kaishu
+\newcommand\normf{\fangsong}
+\newcommand\boldf{\heiti}
+\newcommand\keywords[1]{\boldf{关键词：} \normf #1}
+
+\newcommand\liehat[1]{\left[ #1 \right]_\times}
+\newcommand\lievee[1]{\left[ #1 \right]^\vee}
+\newcommand\liehatvee[1]{\left[ #1 \right]^\vee_\times}
+
+\newcommand\mlcomment[1]{\iffalse #1 \fi}
+%\newcommand\mlcomment[1]{ #1 }
+
+\newcounter{problemname}
+\newenvironment{problem}{\stepcounter{problemname}\par\noindent\normf\textbf{\textcolor[rgb]{1,0,0}{题目\arabic{problemname}.} }}{\leavevmode\\\par}
+\newenvironment{solution}{\par\noindent\normf\textbf{解答: }}{\leavevmode\\\par}
+\newenvironment{note}{\par\noindent\normf\textbf{题目\arabic{problemname}的注记: }}{\leavevmode\\\par}
+
+
+\begin{document}
+	\begin{titlepage}
+	    \centering
+	    \includegraphics[width=0.4\textwidth]{whu_red.png}\par\vspace{1cm}
+	    \vspace{4cm}
+	    {\huge\kaishu “数值分析”编程作业\par 多项式插值 \par}
+	    \vspace{3cm}
+	    {\Large\kaishu 
+	    \begin{center}\begin{tabular}{l}
+	    姓名：陈烁龙\\
+	    学号：\bfseries 2023202140019\\
+	    学院：测绘学院
+	    \end{tabular}\end{center}
+	     \par}
+	    
+	
+	    \vfill
+	
+	% Bottom of the page
+	    {\large\kaishu\bfseries \today\par}
+	\end{titlepage}
+		% 换页
+ 		\thispagestyle{empty}
+		\clearpage
+		
+		% 插入目录、图、表并换页
+		\pagenumbering{roman}
+		\tableofcontents
+		\newpage
+		\listoffigures
+		\newpage
+		\listoftables
+		% 罗马字母形式的页码
+		
+		\clearpage
+		% 从该页开始计数
+		\setcounter{page}{1}
+		% 阿拉伯数字形式的页码
+		\pagenumbering{arabic}
+	
+	\section{\normf{代码运行环境说明}}
+	
+		\normf\bfseries
+		表\ref{tab:代码运行环境}显示了本次编程测试的运行环境。本次代码使用\emph{CPP 17}实现，使用到了线性代数库\emph{Eigen}。代码虽然在\emph{Ubuntu}上实现， 但由于是\emph{Cmake}架构的项目，所以具有跨平台的特征，即可以在\emph{Windows}平台和\emph{Mac}上编译运行。
+		
+		绘图使用\emph{Python}中的\emph{matploylib}库实现，具体的绘图脚本在\emph{script}文件夹下。
+		
+		% Please add the following required packages to your document preamble:
+		% \usepackage{multirow}
+		\begin{table}[h]
+		\centering
+		\caption{\normf 代码运行环境}
+		\label{tab:代码运行环境}
+		\vspace{2mm}
+		\begin{tabular}{ccc|cl}
+		\toprule
+		\multicolumn{1}{c|}{\multirow{2}{*}{Config.}} & OS name & Ubuntu 20.04.6 LTS & Processor              & 12th Gen Intel® Core™ i9-12900H × 20              \\ \cmidrule{2-5} 
+		\multicolumn{1}{c|}{}                         & OS Type & 64-bit             & Graphics               & Mesa Intel® Graphics (ADL GT2)                    \\ \midrule[1pt]\midrule[1pt]
+		\multicolumn{3}{c|}{Library}                                                 & \multicolumn{2}{c}{Link}                                                   \\ \midrule
+		\multicolumn{3}{c|}{Eigen3}                                                  & \multicolumn{2}{c}{https://eigen.tuxfamily.org/index.php?title=Main\_Page}              \\ \bottomrule
+		\end{tabular}
+		\end{table}
+		
+		本次的作业已上传到(\url{https://github.com/Unsigned-Long/Homework/tree/master/numerical_analysis/prog4})。
+		
+	\section{\normf{复化梯形求积公式}}
+	给定被积函数$f(x)$，其在区间$[a,b]$的梯形数值积分为：
+	\begin{equation}
+	\int_{a}^{b}f(x)dx\approx T(a,b)=\frac{b-a}{2}\left(
+	f(a)+f(b)
+	\right) 
+	\end{equation}
+	高阶Newton-Cotes公式会出现数值不稳定, 而低阶Newton-Cotes
+	公式有时又不能满足精度要求. 解决这
+	个矛盾的办法是将积分区间$[a,b]$分成若
+	干小区间, 在每个小区间上用低阶求积
+	公式计算, 然后将它们加起来, 这就是复
+	化(composite)求积方法的思想.
+	给定被积函数$f(x)$，其在区间$[a,b]$的复化梯形数值积分为：
+	\begin{equation}
+	\int_{a}^{b}f(x)dx\approx T_c(a,b,n)=\frac{h}{2}\left( f(a)+2\times\sum_{i=1}^{n-1}f(x_k)+f(b)\right)
+	\end{equation}
+	其中：
+	\begin{equation}
+		h=\frac{b-a}{n}\qquad
+		x_k=a+k\times h
+	\end{equation}
+	
+	\section{\normf{复化Simpson求积公式}}
+	给定被积函数$f(x)$，其在区间$[a,b]$的Simpson数值积分为：
+	\begin{equation}
+		\int_{a}^{b}f(x)dx\approx S(a,b)=\frac{b-a}{6}\left(
+		f(a)+4\times f\left( \frac{a+b}{2}\right) +f(b)
+		\right) 
+	\end{equation}
+	其在区间$[a,b]$的复化Simpson数值积分为：
+	\begin{equation}
+	\int_{a}^{b}f(x)dx\approx S_c(a,b,n)=\frac{h}{3}\left( f(a)+4\times\sum_{k=1}^{n}f(x_{2k-1})+2\times\sum_{k=1}^{n-1}f(x_{2k})+f(b)\right) 
+	\end{equation}
+	其中：
+	\begin{equation}
+		h=\frac{b-a}{2n}\qquad
+		x_k=a+k\times h
+	\end{equation}
+	
+	\section{\normf{Romberg求积公式}}
+	给定被积函数$f(x)$，求积为区间$[a,b]$，将其分为$2^k$份，则有：
+	\begin{equation}
+	\begin{aligned}
+	T_0^{(0)}&=\frac{b-a}{2}(f(a)+f(b))
+	\\
+	T_0^{(k)}&=\frac{1}{2}T_0^{(k-1)}+\frac{b-a}{2^k}\sum_{i=1}^{2^{k-1}}f\left(
+	a+(2\times i-1)\times\frac{b-a}{2^k}
+	\right) 
+	\\
+	T_m^{(l)}&=\frac{4^m\times T_{m-1}^{(l+1)}-T_{m-1}^{(l)}}{4^m-1}
+	\end{aligned}
+	\end{equation}
+	
+	\section{\normf{高斯型求积公式}}
+	n次多项式为勒让德多项式定义为：
+	\begin{equation}
+	P_n(x)=\frac{1}{2^n\times n!}\times \frac{d^n}{dx^n}
+	(x^2-1)^n
+	\end{equation}
+	当$n=0,1,2,3$时，有：
+	\begin{equation}
+	\begin{aligned}
+	P_0(x)=&1
+	\\
+	P_1(x)=&x
+	\qquad real\;roots:0
+	\\
+	P_2(x)=&\frac{1}{2}(3x^2-1)
+	\qquad real\;roots:\pm\sqrt{\frac{1}{3}}
+	\\
+	P_3(x)=&\frac{1}{2}(5x^3-3x)
+	\qquad real\;roots:0,\pm\sqrt{\frac{3}{5}}
+	\end{aligned}
+	\end{equation}
+	给定被积函数$f(x)$，求积为区间$[a,b]$，令:
+	\begin{equation}
+	x=\frac{b-a}{2}\times t+\frac{b+a}{2}
+	\rightarrow
+	f(x)=f\left( \frac{b-a}{2}\times t+\frac{b+a}{2}\right) 
+	\quad
+	a\Leftarrow -1\quad b\Leftarrow 1
+	\end{equation}
+	将积分区间归化到$[-1,1]$，有高斯积分：
+	\begin{equation}
+	G(a,b,n)=\sum_{j=1}^{n}A_j\times 
+	f\left( 
+	\frac{b-a}{2}\times t_j+\frac{b+a}{2}
+	\right) 
+	\end{equation}
+	其中$t_j$为$P_n(x)$的第$j$个实根，$A_j$为：
+	\begin{equation}
+	A_j=\int_{-1}^{1}\prod_{i=1,i!=j}^{n}\frac{t-t_i}{t_j-t_i}dt
+	\end{equation}
+	特别的，当$n=2$时：
+	\begin{equation}
+	\begin{aligned}
+	A_1&=\int_{-1}^{1}\frac{t-t_2}{t_1-t_2}dt=\frac{1}{t_1-t_2}\left[
+		\frac{1}{2}\times t^2-t_2\times t
+		\right]_{-1}^{1}=-\frac{2\times t_2}{t_1-t_2}=1
+		\\
+		A_2&=\int_{-1}^{1}\frac{t-t_1}{t_2-t_1}dt=-\frac{2\times t_1}{t_2-t_1}=1
+		\\
+		t_1&=-\sqrt{\frac{1}{3}}\qquad t_2=\sqrt{\frac{1}{3}}
+	\end{aligned}
+	\end{equation}
+	当$n=3$时：
+	\begin{equation}
+	\begin{aligned}
+	A_1
+%	&=\int_{-1}^{1}\frac{t-t_2}{t_1-t_2}\cdot\frac{t-t_3}{t_1-t_3}dt
+%	\\&=
+%	\frac{1}{(t_1-t_2)\cdot(t_1-t_3)}\int_{-1}^{1}(t^2-(t_2+t_3)t+t_2t_3)dt
+%	\\&=\frac{1}{(t_1-t_2)\cdot(t_1-t_3)}\left[
+%	\frac{1}{3}t^3-\frac{t_2+t_3}{2}t^2+t_2t_3t
+%	\right] _{-1}^{1}
+%	\\
+%	&=\frac{1}{(t_1-t_2)\cdot(t_1-t_3)}\cdot\left(
+%	\frac{2}{3}+2t_2t_3
+%	\right) 
+%	\\
+%	&
+	=\frac{5}{9}
+	\qquad A_2
+%	=\frac{1}{(t_2-t_1)\cdot(t_2-t_3)}\cdot\left(
+%		\frac{2}{3}+2t_1t_3
+%		\right)
+		=\frac{8}{9}
+		\qquad A_3
+%		=\frac{1}{(t_3-t_1)\cdot(t_3-t_2)}\cdot\left(
+%			\frac{2}{3}+2t_1t_2
+%			\right)
+		=\frac{5}{9}
+		\qquad t_1=-\sqrt{\frac{3}{5}}\qquad t_2=0\qquad t_3=\sqrt{\frac{3}{5}}
+	\end{aligned}
+	\end{equation}
+	
+	\section{\normf{测试}}
+	\subsection{\normf{Runge函数}}
+	Runge函数为：
+	\begin{equation}
+	f(x)=\frac{1}{1+x^2},x\in[-5,5]
+	\end{equation}
+	其积分真值为：
+	\begin{equation}
+	\int_{-5}^{5}\frac{1}{1+x^2}dx=\left[ \arctan(x) \right] _{-5}^{5}=\arctan(5)-\arctan(-5)=2.746801534
+	\end{equation}
+	
+	\subsection{\normf{第一类不完全椭圆积分}}
+		第一类不完全椭圆积分为：
+		\begin{equation}
+		f(\phi,\alpha)=\frac{1}{\sqrt{1-(\sin\theta\sin\alpha)^2}},\theta\in[0,\phi]
+		\end{equation}
+		其中$\phi$为幅度，$\alpha$为模角。
+	
+	\subsection{\normf{Zigzag函数}}
+	考虑的Zigzag函数为：
+	\begin{equation}
+	f(x)=x^2\times\sin(5x)^2,x\in[1,2]
+	\end{equation}
+	
+	
+	
+	
+	
+		
+	\newpage
+	\section*{ACKNOWLEDGMENT}
+	\begin{tcolorbox}[colback=white,colframe=white!70!black,title={\bfseries Author Information}]
+	\par\noindent
+		\parbox[t]{\linewidth}{
+	 \noindent\parpic{\includegraphics[height=2in,width=1in,clip,keepaspectratio]{ShuolongChen_grey.jpg}}
+	 \noindent{\bfseries Shuolong Chen}\emph{
+	 received the B.S. degree in geodesy and geomatics engineering from Wuhan University, Wuhan China, in 2023.
+	 He is currently a master candidate at the school of Geodesy and Geomatics, Wuhan University. His area of research currently focuses on integrated navigation systems and multi-sensor fusion.
+	 Contact him via e-mail: shlchen@whu.edu.cn.
+	 }}
+	\end{tcolorbox}
+		
+		
+\end{document}
+
