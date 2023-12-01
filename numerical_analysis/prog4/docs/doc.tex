@@ -72,7 +72,7 @@
 	    \centering
 	    \includegraphics[width=0.4\textwidth]{whu_red.png}\par\vspace{1cm}
 	    \vspace{4cm}
-	    {\huge\kaishu “数值分析”编程作业\par 多项式插值 \par}
+	    {\huge\kaishu “数值分析”编程作业\par 数值积分 \par}
 	    \vspace{3cm}
 	    {\Large\kaishu 
 	    \begin{center}\begin{tabular}{l}
@@ -156,7 +156,7 @@
 	\end{equation}
 	
 	\section{\normf{复化Simpson求积公式}}
-	给定被积函数$f(x)$，其在区间$[a,b]$的Simpson数值积分为：
+	Simpson求积公式是一个二次多项式，它可以准确地逼近二次函数。因此，复化Simpson数值积分通常比复合梯形积分更准确，需要使用更少的节点来获得相同的精度。给定被积函数$f(x)$，其在区间$[a,b]$的Simpson数值积分为：
 	\begin{equation}
 		\int_{a}^{b}f(x)dx\approx S(a,b)=\frac{b-a}{6}\left(
 		f(a)+4\times f\left( \frac{a+b}{2}\right) +f(b)
@@ -173,7 +173,7 @@
 	\end{equation}
 	
 	\section{\normf{Romberg求积公式}}
-	给定被积函数$f(x)$，求积为区间$[a,b]$，将其分为$2^k$份，则有：
+	Romberg数值积分是一种数值积分方法，它使用外推技术来提高数值积分的精度。该方法通过递归地使用复合梯形积分来提高数值积分的精度。在每一次递归中，Romberg数值积分使用Richardson外推技术来计算更高阶的数值积分公式。给定被积函数$f(x)$，求积为区间$[a,b]$，将其分为$2^k$份，则有：
 	\begin{equation}
 	\begin{aligned}
 	T_0^{(0)}&=\frac{b-a}{2}(f(a)+f(b))
@@ -187,7 +187,7 @@
 	\end{equation}
 	
 	\section{\normf{高斯型求积公式}}
-	n次多项式为勒让德多项式定义为：
+	高斯-勒让德数值积分的思想是将函数在一定区间上进行勒让德多项式逼近，然后使用适当的节点和权重来计算函数的积分值。由于勒让德多项式的性质，高斯-勒让德数值积分通常比复合梯形积分和复合Simpson积分更准确，需要使用更少的节点来获得相同的精度。n次多项式为勒让德多项式定义为：
 	\begin{equation}
 	P_n(x)=\frac{1}{2^n\times n!}\times \frac{d^n}{dx^n}
 	(x^2-1)^n
@@ -271,32 +271,205 @@
 	
 	\section{\normf{测试}}
 	\subsection{\normf{Runge函数}}
-	Runge函数为：
+	所考察的Runge函数为：
 	\begin{equation}
-	f(x)=\frac{1}{1+x^2},x\in[-5,5]
+	f(x)=\frac{1}{1+x^2},x\in[-2,2]
 	\end{equation}
-	其积分真值为：
+	Runge函数在区间$[-2,2]$的积分真值为：
 	\begin{equation}
-	\int_{-5}^{5}\frac{1}{1+x^2}dx=\left[ \arctan(x) \right] _{-5}^{5}=\arctan(5)-\arctan(-5)=2.746801534
+	\int_{-2}^{2}\frac{1}{1+x^2}dx=\left[ \arctan(x) \right] _{-2}^{2}=\arctan(2)-\arctan(-2)=2.214297435588181
 	\end{equation}
 	
-	\subsection{\normf{第一类不完全椭圆积分}}
-		第一类不完全椭圆积分为：
-		\begin{equation}
-		f(\phi,\alpha)=\frac{1}{\sqrt{1-(\sin\theta\sin\alpha)^2}},\theta\in[0,\phi]
-		\end{equation}
-		其中$\phi$为幅度，$\alpha$为模角。
+	\begin{figure}[h!]
+	\centering
+		\centering
+		\includegraphics[width=0.8\linewidth]{../data/func1.pdf}
+	\caption{\normf Runge函数及其积分区间}
+	\label{fig:Runge函数及其积分区间}
+	\end{figure}
+	
+	测试：分别使用复合梯形积分($n=1,2,\cdots 9$)，复合Simpson积分($n=1,2,\cdots 9$)，Romberg求积($k=1,2,\cdots 9$)，以及高斯-勒让德积分(两点,三点,四点,五点)，对该函数进行积分，其积分结果和对应的积分误差如图\ref{fig:Runge函数积分结果}和表\ref{tab:Runge函数高斯-勒让德积分结果}所示：
+	\begin{figure}[h!]
+	\centering
+		\centering
+		\includegraphics[width=0.8\linewidth]{../data/func1_integration.pdf}
+	\caption{\normf Runge函数积分结果(复合梯形，复合Simpson，Romberg求积)}
+	\label{fig:Runge函数积分结果}
+	\end{figure}
+	
+	% Please add the following required packages to your document preamble:
+	% \usepackage{multirow}
+	\begin{table}[]
+	\caption{\normf Runge函数高斯-勒让德积分计算结果}
+	\label{tab:Runge函数高斯-勒让德积分结果}
+	\centering
+	\vspace{2mm}
+	\normf
+\begin{tabular}{l|c|cc}
+\toprule
+\multirow{5}{*}{$\begin{aligned}
+\int_{-2}^{2}\frac{1}{1+x^2}dx
+\end{aligned}$} & 高斯-勒让德积分 & 解算结果                   & 解算误差                   \\ \cmidrule{2-4} 
+              & 两点积分     & 1.71428571428571419055 & 0.50001172130246662739 \\
+              & 三点积分     & 2.43137254901960764286 & 0.21707511343142682492 \\
+              & 四点积分     & 2.13464719184664986074 & 0.07965024374153095721 \\
+              & 五点积分     & 2.24539749579380076838 & 0.03110006020561995044 \\ \bottomrule
+\end{tabular}
+	\end{table}
+	
+	由于复合梯形积分使用梯形来逼近曲线下的面积，而复合Simpson积分使用二次多项式来逼近曲线下的面积，因此复合Simpson积分的精度相对较高，可以使用更少的小区间来获得相同的精度。
+	而Romberg积分法则通过递归地使用复合梯形积分来提高数值积分的精度。该方法使用了Richardson外推技术，通过不断增加小区间的数量来逼近真实的积分值。Romberg积分法的优点在于它的精度相对较高，可以使用更少的小区间来获得相同的精度。但是它需要进行递归计算，实现比较复杂，计算量比较大。
+	
+	与这些方法不同，高斯-勒让德积分使用一组特殊的节点和权重来计算函数在一定区间上的定积分。这些节点和权重是通过对勒让德多项式进行递归求解得到的。与复合梯形积分和复合Simpson积分不同，高斯-勒让德积分使用非等距节点，这些节点是根据勒让德多项式的零点计算得到的。由于这些节点的选择是优化过的，因此高斯-勒让德积分通常比复合梯形积分和复合Simpson积分更准确，需要使用更少的节点来获得相同的精度。
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	\subsection{\normf{Zigzag函数}}
 	考虑的Zigzag函数为：
 	\begin{equation}
-	f(x)=x^2\times\sin(5x)^2,x\in[1,2]
+	f(x)=\frac{1}{10}\times x^2\times\sin^2(\pi x),x\in[0,10]
 	\end{equation}
+	其积分真值为：
+	\begin{equation}
+	\begin{aligned}
+	\int_{0}^{10}\frac{1}{10}\times x^2\times\sin^2(\pi x)dx&=\frac{1}{10}\left[
+		\frac{1}{6}x^3-\frac{1}{4\pi}x^2\sin 2\pi x-\frac{1}{4\pi^2}x\cos 2\pi x+\frac{1}{8\pi^3}\sin 2\pi x
+		\right] _0^{10}
+		\\&=16.641336370756086
+	\end{aligned}
+	\end{equation}
+	\begin{figure}[h!]
+	\centering
+		\centering
+		\includegraphics[width=0.8\linewidth]{../data/func2.pdf}
+	\caption{\normf Zigzag函数及其积分区间}
+	\label{fig:Zigzag函数及其积分区间}
+	\end{figure}
+		测试：分别使用复合梯形积分($n=1,2,\cdots 9$)，复合Simpson积分($n=1,2,\cdots 9$)，Romberg求积($k=1,2,\cdots 9$)，以及高斯-勒让德积分(两点,三点,四点,五点)，对该函数进行积分，其积分结果和对应的积分误差如图\ref{fig:Zigzag函数积分结果}和表\ref{tab:Zigzag函数高斯-勒让德积分结果}所示：
+	\begin{figure}[h!]
+	\centering
+		\centering
+		\includegraphics[width=0.8\linewidth]{../data/func2_integration.pdf}
+	\caption{\normf Zigzag函数积分结果(复合梯形，复合Simpson，Romberg求积)}
+	\label{fig:Zigzag函数积分结果}
+	\end{figure}
 	
+		
+		% Please add the following required packages to your document preamble:
+		% \usepackage{multirow}
+		\begin{table}[]
+		\caption{\normf Zigzag函数两点、三点高斯-勒让德积分计算结果}
+		\label{tab:Zigzag函数高斯-勒让德积分结果}
+		\centering
+		\vspace{2mm}
+		\normf
+\begin{tabular}{l|c|cc}
+\toprule
+\multirow{5}{*}{$\begin{aligned}
+\int_{0}^{10}\frac{1}{10}\times x^2\times\sin^2(\pi x)dx
+\end{aligned}$} & 高斯-勒让德积分 & 解算结果                    & 解算误差                    \\ \cmidrule{2-4} 
+            & 两点积分     & 4.04428992347068394508  & 12.59704644728540223753 \\
+            & 三点积分     & 3.35454999566116418563  & 13.28678637509492155289 \\
+            & 四点积分     & 22.07766121009935744723 & 5.43632483934327126462  \\
+            & 五点积分     & 21.13824534099885710248 & 4.49690897024277091987  \\ \bottomrule
+\end{tabular}
+		\end{table}
+		
+		
+		
+	可以看到，相比较于Runge函数，该函数由于震荡比较厉害，使用同样复合梯形积分或者复合Simpson积分方法，积分精度和稳定性较差。复合梯形积分或者复合Simpson积分方法是基于等距节点的，即将区间等分成若干个小区间，然后在每个小区间上使用相同的数值积分公式进行计算。特别的，对于某些特定的n(比如n=5)，所选择的节点的函数值都相等(n=5时，节点函数值等于0)，此时，积分结果会比较差。
 	
+	与这两种方法不同，Romberg积分法通过递归地使用复合梯形积分(使用了更多的节点来计算：$2^k$个节点)，所以效果较好，但是计算量很大。
 	
+	同样的，当函数在某些小区间上的震荡比较厉害时，低阶的高斯-勒让德数值积分无法准确地逼近函数的真实值，从而导致数值积分的误差大。
+		
 	
+	\section{\normf{代码附录}}
+	\begin{lstlisting}[caption=\normf 复化梯形求积]
+    double TrapezoidalComp(const std::function<double(double)> &f, double a, double b, int n) {
+        double h = (b - a) / n;
+        double sum = 0.0;
+        for (int i = 1; i <= n - 1; ++i) { sum += f(a + i * h); }
+        return h * 0.5 * (f(a) + 2.0 * sum + f(b));
+    }
+	\end{lstlisting}
 	
+	\begin{lstlisting}[caption=\normf 复化Simpson求积]
+    double SimpsonComp(const std::function<double(double)> &f, double a, double b, int n) {
+        double h = (b - a) / (2 * n);
+        auto x = [&h, &a](int j) { return a + j * h; };
+        double sum1 = 0.0, sum2 = 0.0;
+        for (int j = 1; j <= n; ++j) {
+            sum1 += f(x(2 * j - 1));
+        }
+        for (int j = 1; j <= n - 1; ++j) {
+            sum2 += f(x(2 * j));
+        }
+        return h / 3.0 * (f(a) + 4 * sum1 + 2 * sum2 + f(b));
+    }
+	\end{lstlisting}
+	
+	\begin{lstlisting}[caption=\normf Romberg求积]
+    double Romberg(const std::function<double(double)> &f, double a, double b, int m) {
+        Eigen::MatrixXd T(m + 1, m + 1);
+        T.setZero();
+        T(0, 0) = (b - a) * 0.5 * (f(a) + f(b));
+        for (int k = 1; k <= m; ++k) {
+            double sum = 0.0;
+            for (int i = 1; i <= std::pow(2, k - 1); ++i) {
+                sum += f(a + (2 * i - 1) * (b - a) / std::pow(2, k));
+            }
+            T(k, 0) = 0.5 * T(k - 1, 0) + (b - a) / std::pow(2, k) * sum;
+        }
+        for (int i = 1; i <= m; ++i) {
+            for (int j = i; j <= m; ++j) {
+                T(j, i) = (std::pow(4, i) * T(j, i - 1) - T(j - 1, i - 1)) / (std::pow(4, i) - 1);
+            }
+        }
+        return T(m, m);
+    }
+	\end{lstlisting}
+	
+	\begin{lstlisting}[caption=\normf Gauss求积]
+    double Gauss(const std::function<double(double)> &f, double a, double b, int n) {
+        double aCoeffs[6][6] = {
+                {2.0},
+                {1.0,       1.0},
+                {5.0 / 9.0, 8.0 / 9.0, 5.0 / 9.0},
+                {0.3478548, 0.6521452, 0.6521452, 0.3478548},
+                {0.2369269, 0.4786287, 0.5688889, 0.4786287, 0.2369269},
+                {0.1713245, 0.3607616, 0.4679139, 0.4679139, 0.3607616, 0.1713245}
+        };
+        double tCoeffs[6][6] = {
+                {0.0},
+                {-1.0 / std::sqrt(3.0), 1.0 / std::sqrt(3.0)},
+                {-std::sqrt(3.0 / 5.0), 0.0,        std::sqrt(3.0 / 5.0)},
+                {-0.8611363,            -0.3399810, 0.3399810,  0.8611363},
+                {-0.9061798,            -0.5384693, 0.0,        0.5384693, 0.9061798},
+                {-0.9324695,            -0.6612094, -0.2386192, 0.2386192, 0.6612094, 0.9324695}
+        };
+        auto x = [&a, &b](double t) {
+            return (b - a) * 0.5 * t + (b + a) * 0.5;
+        };
+        if (n < 0 || n > 5) {
+            throw std::runtime_error("unsupported order 'n'");
+        } else {
+            double res = 0.0;
+            for (int i = 0; i < n; ++i) {
+                res += aCoeffs[n - 1][i] * f(x(tCoeffs[n - 1][i]));
+            }
+            res *= (b - a) * 0.5;
+            return res;
+        }
+    }
+	\end{lstlisting}
 		
 	\newpage
 	\section*{ACKNOWLEDGMENT}
