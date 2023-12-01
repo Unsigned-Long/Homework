@@ -94,6 +94,18 @@ int main() {
     // TestSteepestDescent1();
     // TestSteepestDescent2();
     // TestConjugateGradient1();
-    TestConjugateGradient2();
+    // TestConjugateGradient2();
+    Eigen::MatrixXd AMat(2, 2);
+    AMat << 6, 3, 3, 2;
+    Eigen::VectorXd bVec(2);
+    bVec << 0, -1;
+    Eigen::VectorXd xVec0(2);
+    // xVec0 << -2, -2;
+    xVec0 << 0, 0;
+    Eigen::VectorXd xVec;
+    LOG_VAR(AMat)
+    LOG_VAR(bVec.transpose())
+    ns_na::conjugate_gradient(AMat, bVec, xVec0, xVec);
+    LOG_VAR(xVec)
     return 0;
 }

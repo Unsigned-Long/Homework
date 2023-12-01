@@ -9,11 +9,14 @@ namespace ns_na {
         Eigen::VectorXd pVec = rVec;
         int count = 0;
         while (true) {
+            LOG_VAR(count)
             ++count;
             // LOG_VAR(xVec.transpose())
             Eigen::VectorXd ap = AMat * pVec;
             double alpha = rVec.dot(pVec) / ap.dot(pVec);
+            LOG_VAR(alpha)
             xVec = xVec + alpha * pVec;
+            LOG_VAR(xVec.transpose())
             if (alpha * pVec.squaredNorm() < thresh) {
                 break;
             }
@@ -21,6 +24,7 @@ namespace ns_na {
             rVec = rVec - alpha * ap;
             double beta2 = rVec.dot(rVec) / beta1;
             pVec = rVec + beta2 * pVec;
+            LOG_VAR(pVec.transpose())
         }
         LOG_VAR(count)
     }
