@@ -548,6 +548,575 @@
 		\end{equation}
 	}
 	
+	\section{\normf{可微无约束优化问题}}
+	\problem{...}
+	\solution{
+	对$f(x)$求导，得到：
+	\begin{equation}
+	\frac{\partial f(x_1,x_2)}{\partial x_1}=4x_1-2x_2+6x_1^2+4x_1^3
+	\qquad
+	\frac{\partial f(x_1,x_2)}{\partial x_2}=2x_2-2x_1
+	\end{equation}
+	令上两式为0，得到：
+	\begin{equation}
+	(0,0)\quad(-1,-1)\quad(-0.5,-0.5)
+	\end{equation}
+	求二阶导数，得到：
+	\begin{equation}
+	\frac{\partial^2 f(x_1,x_2)}{\partial x_1\partial x_1}=4+12x_1+12x_1^2
+	\qquad
+	\frac{\partial^2 f(x_1,x_2)}{\partial x_1\partial x_2}=-2
+	\qquad
+	\frac{\partial^2 f(x_1,x_2)}{\partial x_2\partial x_2}=2
+	\qquad
+	\frac{\partial^2 f(x_1,x_2)}{\partial x_2\partial x_1}=-2
+	\end{equation}
+	所以二阶矩阵为：
+	\begin{equation}
+	\begin{bmatrix}
+	4+12x_1+12x_1^2 & -2\\
+	-2&2
+	\end{bmatrix}\Rightarrow
+	\begin{bmatrix}
+	4 & -2\\
+	-2&2
+	\end{bmatrix}\quad
+	\begin{bmatrix}
+	4 & -2\\
+	-2&2
+	\end{bmatrix}\quad
+	\begin{bmatrix}
+	1 & -2\\
+	-2&2
+	\end{bmatrix}
+	\end{equation}
+	可以计算得到，前两个解的二阶矩阵特征值都为正，所以其至少是局部极小点，而第三个解的二阶矩阵特征值一正一负，所以其为鞍点。
+	具体地：
+	\begin{equation}
+	(0,0)\Rightarrow f(x_1,x_2)=0
+	\qquad
+	(-1,-1)\Rightarrow f(x_1,x_2)=0
+	\end{equation}
+	所以二者同为全局最小点。
+	}
+	
+	\problem{...}
+	\solution{
+	对函数求导，得到：
+	\begin{equation}
+	\frac{\partial f(x_1,x_2)}{\partial x_1}=x_1
+	\qquad
+	\frac{\partial f(x_1,x_2)}{\partial x_2}=4x_2
+	\end{equation}
+	当$\bsm{x}^{(0)}=(1,1)^\top$时，梯度为$(1,4)^\top$，且有：
+	\begin{equation}
+	f^\prime(\bsm{x}^{(0)})^\top\cdot\bsm{d}^{(0)}=-5<0
+	\end{equation}
+	所以$\bsm{d}^{(0)}$是下降方向。用 Armijo
+	型线性搜索确定步长：
+	\begin{equation}
+	f(\bsm{x}^{(0)}+\alpha_0\bsm{d}^{(0)})\le f(\bsm{x}^{(0)})+0.9\alpha_0f^\prime(\bsm{x}^{(0)})^\top\cdot\bsm{d}^{(0)}
+	\end{equation}
+	得到：
+	\begin{equation}
+	0.5(1-0.5^i)^2+2(1-0.5^i)^2\le 2.5-4.5\cdot 0.5^i
+	\end{equation}
+	求解$i$即可。
+	}
+	
+	\problem{...}
+	\solution{
+	采用精确线性搜索的梯度法求解该问题：
+	\begin{equation}
+	\bsm{d}^{(0)}=(2x_1,4x_2)^\top=(2,4)^\top
+	\qquad\bsm{x}^{(0)}=(1,1)^\top
+	\qquad
+	f(\bsm{x}^{(0)}+\alpha_0\bsm{d}^{(0)})=(1+2\alpha_0)^2+2(1+4\alpha_0)^2
+	\end{equation}
+	求导得到：
+	\begin{equation}
+	4(1+2\alpha_0)+16(1+4\alpha_0)=0\Rightarrow\alpha_0=-\frac{5}{18}
+	\end{equation}
+	特别的，对于二次函数，有：
+	\begin{equation}
+	f(x)=\frac{1}{2}x^\top Ax-b^\top x=\frac{1}{2}\begin{bmatrix}
+	x_1&x_2
+	\end{bmatrix}
+	\begin{bmatrix}
+	2&0\\0&4
+		\end{bmatrix}\begin{bmatrix}
+			x_1\\x_2
+			\end{bmatrix}-\begin{bmatrix}
+				0&0
+				\end{bmatrix}\begin{bmatrix}
+							x_1\\x_2
+							\end{bmatrix}
+	\end{equation}
+	用采用精确线性搜索的牛顿法求解该问题:
+	\begin{equation}
+	f^\prime=(2x_1,4x_2)^\top=(2,4)^\top
+	\quad f^{\prime\prime}=\begin{bmatrix}
+	2&0\\
+	0&4
+	\end{bmatrix}
+	\quad\left( f^{\prime\prime}\right)^{-1} =\begin{bmatrix}
+		0.5&0\\
+		0&0.25
+		\end{bmatrix}
+	\qquad\bsm{x}^{(0)}=(1,1)^\top
+	\end{equation}
+	所以：
+	\begin{equation}
+	f\left( \bsm{x}^{(0)}+\alpha_0\cdot\left( f^{\prime\prime}\right)^{-1}\cdot f^\prime\right) =(1+\alpha_0)^2+2(1+\alpha_0)^2
+	\qquad
+	2(1+\alpha_0)+4(1+\alpha_0)=0\Rightarrow\alpha_0=-1
+	\end{equation}
+	一步出结果。
+	}
+	
+	\problem{...}
+	\solution{
+	用经典牛顿法求函数$\bsm{x}^{(0)}=(1,1)^\top$：
+	\begin{equation}
+	f^\prime=(x_1-x_2-1,4x_2-x_1)^\top=(-1,3)^\top
+	\qquad f^{\prime\prime}=\begin{bmatrix}
+	1&-1\\
+	-1&4
+	\end{bmatrix}
+	\qquad\left( f^{\prime\prime}\right)^{-1} =\frac{1}{3}\begin{bmatrix}
+		4&1\\
+		1&1
+		\end{bmatrix}
+	\end{equation}
+	取$\alpha_0=1$，得到：
+	\begin{equation}
+	 \bsm{x}^{(0)}+\alpha_0\cdot\left( f^{\prime\prime}\right)^{-1}\cdot f^\prime=
+	 \begin{bmatrix}
+	 1\\1
+	 \end{bmatrix}+\frac{1}{3}\begin{bmatrix}
+	 		4&1\\
+	 		1&1
+	 		\end{bmatrix}\begin{bmatrix}
+	 		-1\\3
+	 		\end{bmatrix}=\begin{bmatrix}
+	 		\frac{2}{3}\\
+	 		\frac{5}{3}
+	 		\end{bmatrix}
+	\end{equation}
+	}
+	
+	\section{\normf{非线性方程组}}
+	\problem{...}
+	\solution{
+	不动点迭代需要知道函数：
+	\begin{equation}
+	\phi(x)=x\Rightarrow x_{k+1}=\phi(x_k)
+	\end{equation}
+	对于$\phi_1(x)$，由于：
+	\begin{equation}
+	\vert\phi_1^\prime(x)\vert=\frac{1}{5}\cdot x<0.7<1
+	\end{equation}
+	所以可以收敛。对于$\phi_2(x)$，由于：
+	\begin{equation}
+	\vert\phi_2^\prime(x)\vert=\frac{5}{\sqrt{10x-21}}\not <1
+	\end{equation}
+	所以不能收敛。
+	}
+	\problem{...}
+	\solution{
+	判断映射是否收敛。
+	\begin{equation}
+	f^\prime(x)=\begin{bmatrix}
+	-0.5\sin x_1&-0.5\cos x_2\\
+	0.5\cos x_1 & -0.5\sin x_2
+	\end{bmatrix}
+	\qquad
+	\vert f^\prime(x)\vert=0.25\sin x_1\sin x_2+0.25\cos x_1\cos x_2=0.25\cos(x_1-x_2)<1
+	\end{equation}
+	所以收敛。
+	}
+	
+	\problem{...}
+	\solution{
+	对于方程$f(x)=x-\cos x$，牛顿法：
+	\begin{equation}
+	x_{k+1}=x_k-\frac{f(x_k)}{f^\prime(x_k)}
+	\qquad
+	f^\prime(x_k)=1+\sin x_k
+	\end{equation}
+	}
+	\problem{...}
+	\solution{
+	用二分法求解方程$x^2-x-1=0$的根。
+	由于：
+	\begin{equation}
+	f(x)=x^2-x-1\quad f(1)=-1\quad f(2)=1\quad f(1)\cdot f(2)<0 \quad f^\prime(x)=2x-1\ge 0
+	\end{equation}
+	所以区间$[1,2]$之间有零点：
+	\begin{equation}
+	x_0=\frac{1+2}{2}=1.5\quad f(x_0)=-0.25
+	\end{equation}
+	进一步在区间$[1.5,2]$之间求解零点。
+	}
+	\problem{...}
+	\solution{
+	有：
+	\begin{equation}
+	g(x,y)=\begin{bmatrix}
+	x^2+y^2-4\\
+	x^2-y^2-1
+	\end{bmatrix}=\bsm{0}_{2\times 1}
+	\quad
+	g^\prime(x,y)=\begin{bmatrix}
+	2x&2y\\
+	2x&-2y
+	\end{bmatrix}
+	\quad
+	\left( g^\prime(x_k,y_k)\right) ^{-1}=\begin{bmatrix}
+		-2y&-2y\\
+		-2x&2x
+		\end{bmatrix}
+	\end{equation}
+	牛顿法的迭代格式为：
+		\begin{equation}
+		\begin{bmatrix}
+		x_{k+1}\\y_{k+1}
+		\end{bmatrix}=\begin{bmatrix}
+				x_{k}\\y_{k}
+				\end{bmatrix}-\left( g^\prime(x_k,y_k)\right) ^{-1}\cdot g(x_k,y_k)
+		\qquad
+		g^\prime(x_k,y_k)=1+\sin x_k
+		\end{equation}
+	}
+	\problem{...}
+	\solution{
+	\begin{equation}
+	\begin{cases}
+	3x_1^2-x_2^2=0\\
+	3x_1x_2^2-x_1^3-1=0
+	\end{cases}
+	\end{equation}
+	构造一个不动点迭代法:
+	\begin{equation}
+	\begin{pmatrix}
+	x_1\\x_2
+	\end{pmatrix}=\phi(x_1,x_2)=\begin{bmatrix}
+	\frac{x_1^3+1}{3x_2^2}\\
+	3x_1^2-x_2^2+x_2
+	\end{bmatrix}
+	\end{equation}
+	}
+	
+	\problem{...}
+	\solution{
+	牛顿法是不定点迭代法的特殊形式：
+	\begin{equation}
+	g(x)=x-\frac{f(x)}{f^\prime(x)}\qquad
+	g^\prime(x)=\frac{f(x)f^{\prime\prime}(x)}{(f^\prime(x))^2}
+	\end{equation}
+	换为$\lambda$，有：
+	\begin{equation}
+	g(x)=x-\lambda f(x)\qquad
+	g^\prime(x)=1-\lambda f^\prime(x)
+	\end{equation}
+	为了收敛，有：
+	\begin{equation}
+	\vert g^\prime(x)\vert<1
+	\Rightarrow 0<\lambda<2/M
+	\end{equation}
+	}
+	
+	\problem{...}
+	\solution{
+	\begin{equation}
+	x_{k+1}=\frac{x_k(x_k^2+3a)}{3x_k^2+a}
+	\qquad
+	g^\prime(x)=\frac{(3x^2+3a)(3x^2+a)-6x(x^3+3ax)}{(3x^2+a)^2}
+	\end{equation}
+	}
+	
+	\section{\normf{Lagrange 插值}}
+	\problem{...}
+	\solution{
+	由题意知$P_4(x)=a_4x^4+a_3x^3+a_2x^2+a_1x+a_0$，$P_4^\prime(x)=4a_4x^3+3a_3x^2+2a_2x+a_1$：
+	\begin{equation}
+	\begin{cases}
+	a_0=0\\
+	a_1=0\\
+	a_4+a_3+a_2=1\\
+	4a_4+3a_3+2a_2=1\\
+	16a_4+8a_3+4a_2=1
+	\end{cases}\Rightarrow
+	\begin{cases}
+	2a_4+a_3=-1\\
+	8a_4+2a_3=-1
+	\end{cases}\Rightarrow
+	4a_4=1
+	\end{equation}
+	特别的，只考虑函数值：
+	\begin{equation}
+	P_2(x)=0\times\frac{(x-1)(x-2)}{(0-1)(0-2)}+1\times\frac{(x-0)(x-2)}{(1-0)(1-2)}
+	+1\times\frac{(x-0)(x-1)}{(2-0)(2-1)}
+	=-0.5x^2+1.5x
+	\end{equation}
+	特别的，只考虑导数值：
+	\begin{equation}
+	P_1(x)=0\times\frac{x-1}{0-1}+1\times\frac{x-0}{1-0}=x
+	\end{equation}
+	}
+	\problem{...}
+	\solution{
+	计算差商：
+	\begin{equation}
+	\begin{array}{c|c|ccc}
+	x&y&fir&sed&thd\\
+	\hline
+	3.6&36.598\\
+	3.65&38.475&37.54\\
+	3.7&40.447&39.44&19\\
+	3.75&42.521&41.48&20.4&9.33
+	\end{array}
+	\end{equation}
+	}
+	
+	
+	\section{\normf Hermite 插值}
+	\problem{...}
+	\solution{
+	构建两类基函数$H_{1,i}(x)$和$H_{2,i}(x)$，使得：
+	\begin{equation}
+	H_{1,i}(x_j)=\delta_{ij}\quad H_{1,i}^\prime(x_j)=0
+	\qquad
+	H_{2,i}(x_j)=0\quad H_{2,i}^\prime(x_j)=\delta_{ij}
+	\end{equation}
+	则有：
+	\begin{equation}
+	p(x)=\sum_{i=0}^{n}f(x_i)H_{1,i}(x)+\sum_{i=0}^{n}f^\prime(x_i)H_{2,i}(x)
+	\end{equation}
+	其中：
+	\begin{equation}
+	H_{1,i}(x)=\frac{(x-c_i)\prod_{j\ne i}(x-x_j)^2}{(x_i-c_i)\prod_{j\ne i}(x_i-x_j)^2}
+	\qquad
+	c_i=x_i+\frac{1}{2\sum_{j\ne i}\frac{1}{x_i-x_j}}
+	\end{equation}
+	和
+	\begin{equation}
+	H_{2,i}(x)=d_i(x-x_i)\prod_{j\ne i}(x-x_j)^2
+	\qquad
+	d_i=\frac{1}{\prod_{j\ne i}(x_i-x_j)^2}
+	\end{equation}
+	插值余项为：
+	\begin{equation}
+	R(x)=f(x)-p(x)=\frac{f^{(2n+2)(\eta)}}{(2n+2)!}\prod_{i=0}^{n}(x-x_i)^2
+	\end{equation}
+	}
+	
+	\problem{...}
+	\solution{
+	容易得到：
+	\begin{equation}
+	H_{1,0}(x)=\frac{(x+0.5)(x-1)^2}{(0+0.5)(0-1)^2}=2(x+0.5)(x-1)^2
+	\qquad
+	c_0=0+\frac{1}{2(\frac{1}{0-1})}=-0.5
+	\end{equation}
+	\begin{equation}
+	H_{1,1}(x)=\frac{(x-0.5)(x-0)^2}{(1-0.5)(1-0)^2}=2(x-0.5)x^2
+	\qquad
+	c_1=1+\frac{1}{2(\frac{1}{1-0})}=0.5
+	\end{equation}
+	和
+	\begin{equation}
+	H_{2,0}(x)=d_0(x-0)(x-1)^2=x(x-1)^2
+	\qquad
+	d_0=\frac{1}{(0-1)^2}
+	\end{equation}
+	\begin{equation}
+	H_{2,1}(x)=d_1(x-1)(x-0)^2=x^2(x-1)
+	\qquad
+	d_1=\frac{1}{(1-0)^2}
+	\end{equation}
+	所以有：
+	\begin{equation}
+	p(x)=0\times 2(x+0.5)(x-1)^2+1\times 2(x-0.5)x^2+1\times x(x-1)^2 + 2\times x^2(x-1)
+	\end{equation}
+	}
+	
+	\problem{...}
+	\solution{
+		插值余项为：
+		\begin{equation}
+		R(x)=f(x)-p(x)=\frac{f^{(2n+2)(\eta)}}{(2n+2)!}\prod_{i=0}^{n}(x-x_i)^2
+		\end{equation}
+		当$n=1$时，即两点三次 Hermite 插值，余项为：
+		\begin{equation}
+		R(x)=f(x)-p(x)=\frac{f^{(4)(\eta)}}{4!}(x-x_0)(x-x_1)
+		\quad \eta\in(x_0,x_1)
+		\end{equation}
+	}
+	
+	\problem{...}
+	\solution{
+	三次样条插值，(1)为固支边界条件，(2)为简支边界条件。
+	}
+	
+	\problem{...}
+	\solution{
+	(1)右边推到左边，(2)
+	}
+	
+	\problem{...}
+	\solution{
+	三次样条插值，左端点处为固支边界条件，右端点处为简支边界条件。
+	}
+	
+	\section{\normf{B 样条插值与正交多项式}}
+	\problem{...}
+	\solution{
+	$S_2(0,1,2)$
+	}
+	\problem{...}
+	\solution{
+	容易得到：
+	\begin{equation}
+	\begin{aligned}
+		\phi_0(x)=1\\
+		\phi_1(x)=x-\frac{\int_{-1}^{1}(x^2\cdot x\cdot 1)dx}{\int_{-1}^{1}(x^2\cdot 1\cdot 1)dx}\cdot 1=x\\
+		\phi_2(x)=x^2-\frac{\int_{-1}^{1}(x^2\cdot x^2\cdot 1)dx}{\int_{-1}^{1}(x^2\cdot 1\cdot 1)dx}\cdot 1-\frac{\int_{-1}^{1}(x^2\cdot x^2\cdot x)dx}{\int_{-1}^{1}(x^2\cdot x\cdot x)dx}\cdot x
+		=x^2-\frac{3}{5}
+		\\
+		\phi_3(x)=x^3-\frac{\int_{-1}^{1}(x^2\cdot x^3\cdot 1)dx}{\int_{-1}^{1}(x^2\cdot 1\cdot 1)dx}\cdot 1-\frac{\int_{-1}^{1}(x^2\cdot x^3\cdot x)dx}{\int_{-1}^{1}(x^2\cdot x\cdot x)dx}\cdot x
+	-\frac{\int_{-1}^{1}(x^2\cdot x^3\cdot (x-0.6))dx}{\int_{-1}^{1}(x^2\cdot (x-0.6)\cdot (x-0.6))dx}\cdot (x-0.6)
+	\end{aligned}
+	\end{equation}
+	可以通过递推式计算。
+	}
+	\problem{...}
+	\solution{
+	切比雪夫多项式$T_n(x)=\cos n\arccos x$，所以：
+	\begin{equation}
+	\int_{-1}^{1}\frac{T_n^2(x)}{\sqrt{1-x^2}}dx=-\int_{-\pi}^{0}\cos^2 n\theta d\theta
+	=-\frac{1}{n}\int_{-n\pi}^{0}\cos^2\phi d\phi
+	=-\frac{1}{n}\left[\frac{1}{2}\phi+\frac{1}{4}\sin 2\phi
+	\right] _{-n\pi}^{0}=\frac{\pi}{2}
+	\end{equation}
+	}
+	\problem{...}
+	\solution{
+	容易得到：
+	\begin{equation}
+	T^*_n(x)=(2x-1)\cos n\arccos x
+	\end{equation}
+	且有：
+	\begin{equation}
+	\int_{0}^{1}\frac{T^*_m(x)T^*_n(x)}{\sqrt{x(1-x)}}dx=const
+	\end{equation}
+	}
+	\section{\normf{最佳一直逼近}}
+	\problem{...}
+	\solution{
+	chebyshev多项式的权函数为：
+	\begin{equation}
+	\rho(x)=\frac{1}{\sqrt{1-x^2}}
+	\end{equation}
+	且有：
+	\begin{equation}
+	T_0(x)=1\qquad T_1(x)=x
+	\end{equation}
+	根据由GRAM-SCHMIDT正交化得到的递推式：
+	\begin{equation}
+	\phi_{n+1}(x)=(x-\alpha_n)\phi_n(x)-\beta_n\phi_{n-1}(x)
+	\quad \alpha_n=\frac{<x\phi_n(x),\phi_n(x)>}{<\phi_n(x),\phi_n(x)>}
+	\quad \beta_n=\frac{<\phi_n(x),\phi_n(x)>}{<\phi_{n-1}(x),\phi_{n-1}(x)>}
+	\end{equation}
+	可以推导得到，其中：
+	\begin{equation}
+	<\phi_n(x),\phi_n(x)>=\int_{-1}^{1}\rho(x)\phi_n(x)\phi_n(x)dx
+	\end{equation}
+	}
+	\problem{...}
+	\solution{
+	第一类chebyshev节点($T_k(x)=\cos(k\arccos(x))$的零点)：
+	\begin{equation}
+	x_j=\cos\frac{2j-1}{2k}\pi,j=0,\cdots,k-1
+	\end{equation}
+	第二类chebyshev节点($T_k(x)$的极值点)：
+	\begin{equation}
+	x_j=\cos\frac{j}{k}\pi,j=0,\cdots,k
+	\end{equation}
+	}
+	\problem{...}
+	\solution{
+	Remez算法
+	}
+	\problem{...}
+	\solution{
+	求一次最佳一致逼近多项式。
+	\begin{equation}
+	f^\prime(x)=\frac{1}{2\sqrt{x}}=\frac{1}{2}x^{-\frac{1}{2}}
+	\qquad
+	f^{\prime\prime}(x)=-\frac{1}{4}x^{-\frac{3}{2}}
+	\end{equation}
+	由于$f^{\prime\prime}(x)$在$[\frac{1}{4},1]$上保号(恒为负)。设$p(x)=a_0+a_1x$，则$\frac{1}{4}$和$1$为$f(x)-p(x)$的交错点组，即有：
+	\begin{equation}
+	\sqrt{x}-a_0-a_1x=\frac{1}{2}-a_0-\frac{1}{4}a_1=0
+	\qquad
+	\sqrt{x}-a_0-a_1x=1-a_0-a_1=0
+	\end{equation}
+	得到：
+	\begin{equation}
+	a_1=\frac{2}{3}\qquad a_0=\frac{1}{3}
+	\end{equation}
+	}
+	
+	\section{\normf{最佳平方逼近}}
+	\problem{...}
+	\solution{
+	定义二次最佳一致逼近多项式为$g(x)=a_2x^2+a_1x+a_0$，则有：
+	\begin{equation}
+	R(a_0,a_1,a_2,a_3)=\int_{-1}^{1}(f(x)-g(x))^2dx=\int_{-1}^{1}(\sqrt{1+x^2}-a_2x^2-a_1x-a_0)^2dx
+	\end{equation}
+	让$R(a_0,a_1,a_2,a_3)$极小，求导，构建等式，计算逼近多项式系数即可。
+	}
+	\problem{...}
+	\solution{
+	首先将区间极小变换，令$t=2x-1$，则有：
+	\begin{equation}
+	f(t)=\sqrt{1+(t+1)^2/4},t\in[-1,1]
+	\end{equation}
+	Legendre 多项式的权函数为$\rho(x)=1$。
+	设二次最佳平方逼近多项式为$g(x)=a_0p_0(x)+a_1p_1(x)+a_2p_2(x)$。则有：
+	\begin{equation}
+	a_0=\frac{<f(x),p_0(x)>}{<p_0(x),p_0(x)>}=\frac{\int_{-1}^{1}f(x)p_0(x)dx}{\int_{-1}^{1}p_0(x)p_0(x)dx}
+	\qquad
+	a_1=\frac{<f(x),p_1(x)>}{<p_1(x),p_1(x)>}
+	\qquad
+	a_2=\frac{<f(x),p_2(x)>}{<p_2(x),p_2(x)>}
+	\end{equation}
+	}
+	\problem{...}
+	\solution{
+	设变换后的目标向量为$\bsm{y}=(\Vert\bsm{x}\Vert_2,0,0,0)^\top=(6,0,0,0)^\top$。所以：
+	\begin{equation}
+	\bsm{u}=\bsm{y}-\bsm{x}=(3,-1,-5,-1)^\top
+	\end{equation}
+	所以：
+	\begin{equation}
+	\bsm{H}=\bsm{I}_4-2\frac{\bsm{u}\cdot\bsm{u}^\top}{\bsm{u}^\top\cdot\bsm{u}}=
+	\bsm{I}_4-\frac{1}{18}\cdot\begin{bmatrix}
+	9&-3&-15&-3\\
+	-3&1&5&1\\
+	-15&5&25&5\\
+	-3&1&5&1
+	\end{bmatrix}
+	\end{equation}
+	}
+	\problem{...}
+	\solution{
+	三角函数系$(1,\cos x,\sin x,\cos 2x)$。有：
+	\begin{equation}
+	a_i=\frac{2}{\pi}<f,T_i>=\frac{2}{\pi}\int_{-\pi}^{\pi}\sqrt{1-x^2}\cdot T_i(x)dx
+	\end{equation}
+	}
 	
 	
 	\section{\normf{数值微分和积分}}
