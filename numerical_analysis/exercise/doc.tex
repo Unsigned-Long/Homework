@@ -1317,8 +1317,121 @@
 	\int_{0}^{1}\frac{\sin x}{x}dx \Rightarrow\int_{-1}^{1}\frac{\sin \frac{1}{2}(t-1)}{t-1}dt
 	\end{equation}
 	}
+	
+	\section{\normf Fourier 变换}
+	\problem{...}
+	\solution{
+	}
+	\problem{...}
+	\solution{
+	}
+	\problem{...}
+	\solution{
+	}
+	\problem{...}
+	\solution{
+	}
+	
+	
+	\section{\normf{常微分方程（组）}}
+	\problem{...}
+	\solution{
+	由题意知：
+	\begin{equation}
+	y^\prime=f(x,y)=y-\frac{2x}{y}\qquad y(0)=1
+	\end{equation}
+	所以：
+	\begin{equation}
+	y(0+h)=y(0.5)=y(0)+h\times f(x,y)=1+0.5\times(1-\frac{2\times 0}{1})=1.5
+	\end{equation}
+	}
 
-		
+	\problem{...}
+	\solution{
+	精确解为：
+	\begin{equation}
+	y(0.5)=\sqrt{1+2\times 0.5}=\sqrt{2}
+	\end{equation}
+	预估-校正法求解:
+	\begin{equation}
+	f(0,1)=1\qquad f(0.5,1.5)=\frac{3}{2}-\frac{2}{3}=\frac{5}{6}\qquad
+	y(0.5)=y(0)+\frac{h}{2}(f(0,1)+f(0.5,1.5))=1+0.25\cdot(1+\frac{5}{6})=\frac{35}{24}
+	\end{equation}
+	四阶Runge-Kutta公式:
+	\begin{equation}
+	\begin{aligned}
+		y_{n+1}=&y_n+\frac{h}{6}(K_1+2K_2+2K_3+K_4)\\
+		K_1=&f(x_n,y_n)\\
+		K_2=&f(x_n+\frac{h}{2},y_n+\frac{h}{2}K_1)\\
+		K_3=&f(x_n+\frac{h}{2},y_n+\frac{h}{2}K_2)\\
+		K_4=&f(x_n+h,y_n+h\cdot K_3)\\
+	\end{aligned}
+	\end{equation}
+	}
+	\problem{...}
+	\solution{
+	计算改进 Euler 公式的局部截断误差:
+	由于$y^\prime(x_n)=f(x_n,y(x_n))$，对$x$求导：
+	\begin{equation}
+	y^{\prime\prime}(x_n)=f_x(x_n,y(x_n))+f_y(x_n,y(x_n))f(x_n,y(f_n))\cdots
+	\end{equation}
+	}
+	\problem{...}
+	\solution{
+	向前欧拉：
+	\begin{equation}
+	y(x_{n+1})=y(x_n)+h\cdot y^\prime(x_n)=y(x_n)+h\cdot f(x_n,y(x_n))
+	\end{equation}
+	向后欧拉：
+	\begin{equation}
+	y(x_{n+1})=y(x_n)+h\cdot y^\prime(x_n)=y(x_n)+h\cdot f(x_{n+1},y(x_{n+1})) 
+	\end{equation}
+	求解：
+	\begin{equation}
+		y_{n+1}=y_n+h\cdot(-100y_{n+1}+100(x_n+h)+101)
+	\end{equation}
+	}
+	\problem{...}
+	\solution{
+	\begin{equation}
+	u^\prime=3x^2+c_1
+	\quad
+	u=x^3+c_1x+c_2
+	\qquad
+	u(0)=0\quad u^\prime(0)=0\Rightarrow
+	u(1)=
+	\end{equation}
+	}
+	\problem{...}
+	\solution{
+	\begin{equation}
+	-u^{\prime\prime}(x)=2\Rightarrow
+	\frac{u(x_{i+1})+u(x_{i-1})-2u(x_i)}{h^2}=-2
+	\Rightarrow
+	\begin{bmatrix}
+	1&-2&1
+	\end{bmatrix}\begin{bmatrix}
+	u(x_{i-1})\\u(x_i)\\u(x_{i+1})
+	\end{bmatrix}=-2h^2
+	\end{equation}
+	最后有：
+	\begin{equation}
+	\begin{bmatrix}
+		-2&1&0&0&0\\
+		1&-2&1&0&0\\
+		0&1&-2&1&0\\
+		0&0&1&-2&1\\
+		0&0&0&1&-2\\
+		\end{bmatrix}\begin{bmatrix}
+		u(0)\\u(0.25)\\u(0.5)\\u(0.75)\\u(1)
+		\end{bmatrix}=\begin{bmatrix}
+				-0.125\\-0.125\\-0.125\\-0.125\\-0.125
+				\end{bmatrix}
+	\end{equation}
+	}
+	\problem{...}
+	\solution{
+	}
 	\newpage
 	\section*{ACKNOWLEDGMENT}
 	\begin{tcolorbox}[colback=white,colframe=white!70!black,title={\bfseries Author Information}]

@@ -67,6 +67,18 @@
 \newcommand\mlcomment[1]{\iffalse #1 \fi}
 %\newcommand\mlcomment[1]{ #1 }
 
+\newcommand\bsm[1]{\boldsymbol{\mathrm{#1}}}
+\newcommand\rotation[2]{{\bsm{R}_{#1}^{#2}}}
+\newcommand\angvel[2]{{\bsm{\omega}_{#1}^{#2}}}
+\newcommand\translation[2]{{\bsm{p}_{#1}^{#2}}}
+\newcommand\translationhat[2]{{\hat{\bsm{p}}_{#1}^{#2}}}
+\newcommand\linvel[2]{{\bsm{v}_{#1}^{#2}}}
+\newcommand\linacce[2]{{\bsm{a}_{#1}^{#2}}}
+\newcommand\gravity[1]{{\bsm{g}^{#1}}}
+\newcommand\smallminus{{\text{-}}}
+\newcommand\smallplus{{\text{+}}}
+\newcommand\coordframe[1]{\underrightarrow{\mathcal{F}}_{#1}}
+
 \newcounter{problemname}
 \newenvironment{problem}{\stepcounter{problemname}\par\noindent\normf\textbf{\textcolor[rgb]{1,0,0}{题目\arabic{problemname}.} }}{\leavevmode\\\par}
 \newenvironment{solution}{\par\noindent\normf\textbf{解答: }}{\leavevmode\\\par}
@@ -116,7 +128,7 @@
 	
 	\begin{abstract}
 		\normf\bfseries
-		近几年来，同时定位与地图构建(Simultaneous Localization And Mapping, SLAM)技术已经较为成熟，且被广泛应用于诸如自动驾驶、机器人领域中，来提供连续的位置服务和精确、一致的先验地图。出于实时性的要求，SLAM算法需要在优化精度和优化效率之间平衡。目前比较主流的方法是采用滑窗(Sliding Window)优化加边缘化(Marginalization)的策略，能够在保证实时性的同时，尽可能地减少局部优化\footnote{\normf 由于滑窗优化本质上是一中局部优化而非全局批处理优化，得到的结果往往是全局次优的，而不是全局最优。}带来的精度损失。
+		近几年来，同时定位与地图构建(Simultaneous Localization And Mapping, SLAM)技术逐渐成熟，并被广泛应用于诸如自动驾驶、机器人领域中，来提供连续的位置服务和精确、一致的地图。出于实时性的要求，SLAM算法需要在优化精度和优化效率之间平衡。目前比较主流的方法是采用滑窗(Sliding Window)优化加边缘化(Marginalization)的策略，能够在保证实时性的同时，尽可能地减少局部优化\footnote{\normf 由于滑窗优化本质上是一中局部优化而非全局批处理优化，得到的结果往往是全局次优的，而不是全局最优。}带来的精度损失。
 		
 		目前绝大多的SLAM算法在进行优化的时候都针对的是离散位姿状态序列，是一种离散时间(Discrete Time，DT)估计方法。而相对应的连续时间(Continuous Time，CT)估计方法则使用时间域上的连续函数(比如B样条函数)表达位姿轨迹，优化的是连续函数的参量。相比于DT估计方法，CT估计方法在考虑了运动连续性的同时，能够更有利于异步、高频多源传感器的融合。CT方法目前在SLAM技术上应用的不是很多，主要是因为其优化量较大，效率较低。
 		
@@ -132,6 +144,7 @@
 	同时定位与地图构建(Simultaneous Localization and Mapping，SLAM)指从未知环境的未知地点出发，在运动过程中通过重复观测到的地图特征定位自身位置和姿态，再根据自身位置增量式的构建地图，从而达到同时定位和地图构建的目的\cite{高翔2017视觉}。在一个SLAM场景中，随着时间的推移，系统中的状态越来越多。如果在估计器中考虑所有的状态，会导致优化问题膨胀，进而降低估计器的优化效率，使得SLAM算法不能实时运行。
 	
 	在现阶段的SLAM技术中，一种简单有效的控制优化规模的方法，是仅保留离当前时刻最近的N个关键帧，去掉时间上更早的关键帧。也即，将优化规模固定在一个时间窗口内，离开这个窗口的则被丢弃。这种方法称为滑动窗口(Sliding Window)\cite{sibley2008sliding}。当然滑窗优化，可以直接将窗口外的状态直接扔掉，也可以通过构建先验因子，加入到滑窗优化问题中，后者即为边缘化(Marginalization)。
+	边缘化的本质就是利用H矩阵的稀疏性来快速计算出H的逆矩阵。通过边缘化，可以将一些不必要的变量从优化变量中移除，以减少计算量和内存占用。
 	边缘化在概率中的意义是条件概率，即$ P (\boldsymbol{x}_n, \boldsymbol{x}_m) = P (\boldsymbol{x}_n |\boldsymbol{x}_m)P (\boldsymbol{x}_m)$，其中 $\boldsymbol{x}_m$是被边缘化的变量，$\boldsymbol{x}_n$是保留的变量。边缘化相当于将 $\boldsymbol{x}_m$ 的信息集成到$\boldsymbol{x}_n$中，从而减少了优化问题的维度和复杂度。
 	
 	\subsection{\normf{离散时间和连续时间估计}}
@@ -187,7 +200,7 @@
 	  \end{figure}
 	
 	
-	对于均匀B样条曲线而言，式\ref{equ:b_spline_origin}可以等价表示为更简洁的矩阵形式\cite{qin1998general}：
+	对于均匀B样条曲线而言，式(\ref{equ:b_spline_origin})可以等价表示为更简洁的矩阵形式\cite{qin1998general}：
 	\begin{equation}
 	  \label{equ:matrix_bspline1}
 	  \boldsymbol{p}(t)=\sum_{j=0}^{d}\boldsymbol{u}^T\boldsymbol{M}^{(d+1)}_{(j)}\boldsymbol{p}_{i+j}
@@ -206,7 +219,7 @@
 	    1\\{u}\\{u}^2\\{u}^3
 	  \end{pmatrix}
 	\end{equation}
-	进一步化简式\ref{equ:matrix_bspline1}，可以得到：
+	进一步化简式(\ref{equ:matrix_bspline1})，可以得到：
 	\begin{equation}
 	  \label{equ:matrix_bspline2}
 	  \boldsymbol{p}(t)=\boldsymbol{p}_i+\sum_{j=1}^{d}\boldsymbol{u}^T\tilde{\boldsymbol{M}}^{(d+1)}_{(j)}(\boldsymbol{p}_{i+j}-\boldsymbol{p}_{i+j+1})
@@ -312,6 +325,26 @@
 		\end{equation}
 		该残差即为边缘化因子。
 		
+	  \begin{figure}[t]
+	   \centering
+	    \subfigure[\normf{边缘化前的因子图}]{
+	      \centering
+	      \includegraphics[width=\linewidth]{img/marg1.png}
+	      \label{fig:marg_factor}
+	    }
+	    \subfigure[\normf{边缘化过程中的海塞矩阵变化}]{
+	      \centering
+	      \includegraphics[width=\linewidth]{img/marg2.png}
+	      \label{fig:marg_hmat}
+	    }
+			
+	   \caption{\normf{视觉估计器中的边缘化例子\cite{sibley2010sliding}}}
+			
+	   \label{fig:marg_exam}
+	  \end{figure}
+	  
+	  	图\ref{fig:marg_exam}展示了在一个视觉位姿估计器中的边缘化过程。假设现在有4个相机位姿，分别为$\bsm{x}_{\bsm{p}_1}$、$\bsm{x}_{\bsm{p}_2}$、$\bsm{x}_{\bsm{p}_3}$和$\bsm{x}_{\bsm{p}_4}$，其中相机在$\bsm{x}_{\bsm{p}_1}$观测到$\bsm{x}_{\bsm{m}_1}$、$\bsm{x}_{\bsm{m}_2}$和$\bsm{x}_{\bsm{m}_3}$，相机在$\bsm{x}_{\bsm{p}_2}$观测到$\bsm{x}_{\bsm{m}_2}$、$\bsm{x}_{\bsm{m}_3}$和$\bsm{x}_{\bsm{m}_4}$，相机在$\bsm{x}_{\bsm{p}_3}$观测到$\bsm{x}_{\bsm{m}_3}$、$\bsm{x}_{\bsm{m}_4}$和$\bsm{x}_{\bsm{m}_5}$，相机在$\bsm{x}_{\bsm{p}_4}$观测到$\bsm{x}_{\bsm{m}_4}$、$\bsm{x}_{\bsm{m}_5}$和$\bsm{x}_{\bsm{m}_6}$。基于该问题设定可绘制如图\ref{fig:marg_factor}所示的因子图，其对应的海塞矩阵如图\ref{fig:marg_hmat}第一个矩阵所示。现在首先进行对位姿状态$\bsm{x}_{\bsm{p}_1}$的边缘化，由于$\bsm{x}_{\bsm{p}_1}$和$\bsm{x}_{\bsm{m}_1}$、$\bsm{x}_{\bsm{m}_2}$和$\bsm{x}_{\bsm{m}_3}$之间存在关联关系(约束关系)，当通过舒尔补边缘化$\bsm{x}_{\bsm{p}_1}$时，$\bsm{x}_{\bsm{m}_1}$、$\bsm{x}_{\bsm{m}_2}$和$\bsm{x}_{\bsm{m}_3}$两两之间会生成新约束关系，在新的海塞矩阵上，这些状态之间的矩阵子块变得稠密。同样的，如果继续边缘化$\bsm{x}_{\bsm{m}_1}$，由于$\bsm{x}_{\bsm{m}_1}$此时和$\bsm{x}_{\bsm{p}_2}$、$\bsm{x}_{\bsm{m}_2}$、$\bsm{x}_{\bsm{m}_3}$之间存在约束关系，所以新的海塞矩阵上，这三个状态之间的矩阵子块变得稠密。
+			
 		\section{\normf 代码实现}
 		本次的边缘化是基于Ceres\footnote{\normf Ceres库是一个开源的Cpp库，用于建模和求解大规模的非线性优化问题。它可以用于求解有界约束的非线性最小二乘问题和一般的无约束优化问题。}库\cite{Agarwal_Ceres_Solver_2022}实现的。
 		事实上，VINS-Mono\cite{qin2018vins}的凯源代码中，就已经实现了一个较为初步的边缘化版本。但是其存在一下的问题：
